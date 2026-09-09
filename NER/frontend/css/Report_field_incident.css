@@ -1,0 +1,90 @@
+/* ============================================================================
+   NE-AURA (SIH 26002) - REPORT FIELD INCIDENT STYLESHEET
+   Page-Specific Styles for Incident forms, offline CRDT sync status, & uploads
+   ============================================================================ */
+
+.mesh-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mesh-telemetry-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+}
+
+.mesh-telemetry-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent-forest);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
+}
+
+.mesh-telemetry-lbl {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.crdt-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--accent-violet, #8b5cf6);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.incident-file-dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: var(--bg-card-subtle);
+  transition: border-color 0.2s ease;
+}
+
+.incident-file-dropzone:hover {
+  border-color: var(--accent-forest);
+}
+
+.ai-hazard-box {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px dashed var(--accent-forest);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.gps-fetch-btn {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--accent-forest);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gps-fetch-btn:hover {
+  background: var(--accent-forest);
+  color: #ffffff;
+}
+

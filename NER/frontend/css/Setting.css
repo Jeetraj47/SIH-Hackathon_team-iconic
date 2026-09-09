@@ -1,0 +1,95 @@
+/* ============================================================================
+   NE-AURA (SIH 26002) - SETTINGS STYLESHEET
+   Page-Specific Styles for Platform Settings, switches, & telemetry preferences
+   ============================================================================ */
+
+.setting-section-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.setting-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 1rem;
+}
+
+.setting-option-row:last-child {
+  border-bottom: none;
+}
+
+.health-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.health-status-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+}
+
+.health-status-val {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent-forest);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
+}
+
+.health-status-lbl {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+
+.switch-toggle-input {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  background: var(--border-color);
+  outline: none;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+}
+
+.switch-toggle-input:checked {
+  background: var(--accent-forest);
+}
+
+[data-theme="dark"] .switch-toggle-input:checked {
+  background: #10b981;
+}
+
+.switch-toggle-input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.3s ease;
+}
+
+.switch-toggle-input:checked::before {
+  transform: translateX(20px);
+}
+

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NE-AURA: Live Fleet Telematics & ULIP · SIH 26002</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/Live_fleet.css">
+</head>
+<body>
+
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand-title">
+        <div class="brand-logo">NE</div>
+        <div class="brand-text">
+          <h1 class="serif-font">NE-AURA <span class="badge badge-success">SIH 26002</span></h1>
+          <p>Smart India Hackathon 2026 · North Eastern Region Logistics & Public Audit</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="Report_field_incident.html" class="btn btn-outline btn-sm">📝 Report Incident</a>
+        <button class="btn btn-secondary btn-sm" onclick="openDriverModal()">🚗 Driver View</button>
+        <button class="btn btn-danger btn-sm" onclick="toggleLandslideSimulation()">🚨 Trigger Landslide</button>
+
+        <div class="three-dots-container">
+          <button class="three-dots-btn" id="three-dots-btn" onclick="toggleThreeDotsMenu(event)" title="More Options">⋮</button>
+          <div class="three-dots-dropdown" id="three-dots-dropdown">
+            <div class="dropdown-header">More Pages & Services</div>
+            <a href="About_us.html" class="dropdown-item">ℹ️ About Us & Services</a>
+            <a href="resource.html" class="dropdown-item">📑 Resources & Open Data</a>
+            <a href="SOS.html" class="dropdown-item">📞 SOS</a>
+            <a href="Profile.html" class="dropdown-item">👤 Profile</a>
+            <a href="Setting.html" class="dropdown-item">⚙️ Setting</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-scroll-wrapper">
+      <div class="tabs-container">
+        <a href="index.html" class="tab-btn">📊 Executive Dashboard</a>
+        <a href="Gis_map.html" class="tab-btn">🗺️ GIS Map</a>
+        <a href="AI_Route_Optimizer.html" class="tab-btn">🧠 AI Route Optimizer</a>
+        <a href="Live_fleet.html" class="tab-btn active">🚛 Live Fleet & ULIP</a>
+        <a href="supply_chain.html" class="tab-btn">🌾 Supply Chain & Spoilage</a>
+        <a href="Public_fund.html" class="tab-btn">🏛️ Public Fund Governance</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <section class="tab-pane active">
+
+      <!-- Live Telematics KPI Header Strip -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title">
+          <div>
+            <h2>🚛 Live GPS Monitored Fleet Telematics & ULIP Gateway</h2>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">
+              Unified Logistics Interface Platform (ULIP) integration linking VAHAN, SARATHI, FASTag, and FOIS Rail databases across 8 NE States.
+            </p>
+          </div>
+          <span class="badge badge-success">ULIP Gateway Active (99.9% Uptime)</span>
+        </div>
+
+        <div class="grid-4" style="margin-top: 1rem;">
+          <div class="fleet-kpi-card">
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Total Active Fleets</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: var(--accent-forest);" class="serif-font">1,482</div>
+            <span style="font-size: 0.7rem; color: #86efac;">100% GPS Live Monitored</span>
+          </div>
+
+          <div class="fleet-kpi-card">
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Avg Transit Speed</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: var(--text-primary);" class="serif-font">42 km/h</div>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">Hill Safety Compliant</span>
+          </div>
+
+          <div class="fleet-kpi-card">
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">RADR AI Rerouted</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: var(--accent-terracotta);" class="serif-font">42 Vehicles</div>
+            <span style="font-size: 0.7rem; color: var(--accent-terracotta);">Landslide Bypass Active</span>
+          </div>
+
+          <div class="fleet-kpi-card">
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">On-Time Delivery Rate</div>
+            <div style="font-size: 1.6rem; font-weight: 900; color: var(--accent-forest);" class="serif-font">98.4%</div>
+            <span style="font-size: 0.7rem; color: #86efac;">SLA Target Met</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ULIP 4-Gateway Live API Status Cards -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title">
+          <h3>🌐 National ULIP Gateway APIs & Data Verification</h3>
+          <span class="badge badge-info">Ministry of Road Transport & Highways</span>
+        </div>
+
+        <div class="grid-4" style="margin-top: 1rem;">
+          <div class="ulip-gateway-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <strong style="font-size: 0.88rem; color: var(--accent-forest);">🚘 VAHAN 4.0 API</strong>
+              <span class="badge badge-success" style="font-size: 0.65rem;">ONLINE</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Validates vehicle fitness certificates, axle weight permits, and reefer container registration.
+            </p>
+          </div>
+
+          <div class="ulip-gateway-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <strong style="font-size: 0.88rem; color: var(--accent-forest);">🪪 SARATHI API</strong>
+              <span class="badge badge-success" style="font-size: 0.65rem;">ONLINE</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Verifies driver licensing, hill driving endorsements, and bio-metric duty log compliance.
+            </p>
+          </div>
+
+          <div class="ulip-gateway-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <strong style="font-size: 0.88rem; color: var(--accent-forest);">💳 FASTag Gateway</strong>
+              <span class="badge badge-success" style="font-size: 0.65rem;">ONLINE</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Real-time toll plaza RFID passage pings along NH-27, NH-44, and NH-102 mountain passes.
+            </p>
+          </div>
+
+          <div class="ulip-gateway-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <strong style="font-size: 0.88rem; color: var(--accent-forest);">🚆 FOIS Rail Sync</strong>
+              <span class="badge badge-success" style="font-size: 0.65rem;">ONLINE</span>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Freight Operation Information System tracking broad-gauge rail rake handoffs at Lumding Yard.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fleet Telematics Table & Search Filter Toolbar -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button class="fleet-filter-chip active" onclick="filterFleetTable('all', event)">🌐 All Fleets (1,482)</button>
+            <button class="fleet-filter-chip" onclick="filterFleetTable('rerouted', event)">🚨 RADR Rerouted (42)</button>
+            <button class="fleet-filter-chip" onclick="filterFleetTable('cryo', event)">❄️ Cold-Chain Cryo</button>
+            <button class="fleet-filter-chip" onclick="filterFleetTable('heavy', event)">🚚 Heavy 6-Axle</button>
+            <button class="fleet-filter-chip" onclick="filterFleetTable('barge', event)">🚢 NW-2 Barges</button>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="fleetSearchInput" class="form-control" placeholder="Search Reg No / Driver..." style="width: 200px;" onkeyup="searchFleetTable()">
+            <button class="btn btn-primary btn-sm" onclick="searchFleetTable()">🔍 Search</button>
+            <button class="btn btn-success btn-sm" onclick="downloadFleetAuditCSV()">📥 Export Audit CSV</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Reg Number</th>
+                <th>Cargo Category</th>
+                <th>Driver</th>
+                <th>Speed</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="fleet-table-body">
+              <!-- Rendered via script.js / Live_fleet.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Real-Time Telemetry & Safety Widgets Grid -->
+      <div class="grid-3" style="margin-top: 1.5rem;">
+        <!-- FASTag Toll Scan Stream -->
+        <div class="glass-card">
+          <div class="card-header-title">
+            <strong style="color: var(--accent-forest); font-size: 0.88rem;">💳 FASTag RFID Passage Stream</strong>
+            <span class="badge badge-success" style="font-size: 0.65rem;">LIVE SCAN</span>
+          </div>
+          <div class="fastag-stream-box">
+            <div class="fastag-scan-item">
+              <div>
+                <strong>AS-01-HC-9920</strong> · Sonapur Toll
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Toll Amt: ₹320 | Balance: ₹4,820</div>
+              </div>
+              <span class="badge badge-success" style="font-size: 0.65rem;">12m ago</span>
+            </div>
+
+            <div class="fastag-scan-item">
+              <div>
+                <strong>AS-01-GC-9420</strong> · Pandu Port RFID
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Intermodal Gate Passage Verified</div>
+              </div>
+              <span class="badge badge-info" style="font-size: 0.65rem;">24m ago</span>
+            </div>
+
+            <div class="fastag-scan-item">
+              <div>
+                <strong>ML-05-AB-1204</strong> · Shillong Bypass
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Toll Amt: ₹210 | Balance: ₹2,150</div>
+              </div>
+              <span class="badge badge-success" style="font-size: 0.65rem;">38m ago</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reefer Cold-Chain Temp Alert Box -->
+        <div class="reefer-alert-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <strong style="color: var(--accent-terracotta); font-size: 0.88rem;">❄️ Cold-Chain Container Monitor</strong>
+            <span class="badge badge-warning" style="font-size: 0.65rem;">1 Alert</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+            <div>• <strong>TRK-NER-904 (AS-01-GC-9420):</strong> Container temp $+3.2^\circ\text{C}$ (Cryo Target $+2.0^\circ\text{C}$ to $+4.0^\circ\text{C}$).</div>
+            <div style="margin-top: 0.25rem;">• <strong>Action:</strong> Secondary electric compressor automatically engaged. Arrhenius shelf-life buffer safe ($142\text{ hrs}$).</div>
+          </div>
+        </div>
+
+        <!-- Driver Fatigue & Duty Safety Widget -->
+        <div class="fatigue-safety-box">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <strong style="color: var(--accent-violet); font-size: 0.88rem;">🪪 SARATHI Driver Fatigue Safety</strong>
+            <span class="badge badge-info" style="font-size: 0.65rem;">98.6% Compliant</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+            <div>• <strong>Duty Compliance:</strong> 0 drivers over mandatory 8-hour shift limit.</div>
+            <div style="margin-top: 0.25rem;">• <strong>Bio-Metric Log:</strong> Bio-metric duty rest stops mandated at Shillong Bypass & Lumding Hub.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ULIP Record Deep-Dive Display -->
+      <div class="glass-card" style="margin-top: 1.5rem;">
+        <div class="card-header-title">
+          <h3>🔍 ULIP Vehicle & Driver Deep-Dive Inspector</h3>
+        </div>
+        <div id="ulip-record-display">
+          <!-- Rendered via script.js / Live_fleet.js -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ULIP Vehicle Deep-Dive Modal -->
+  <div id="ulip-detail-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>🔍 ULIP National Database Detailed Record</h3>
+        <button class="modal-close-btn" onclick="closeUlipDetailModal()">&times;</button>
+      </div>
+      <div id="ulipModalBody" style="font-size: 0.85rem; line-height: 1.6;">
+        <!-- Dynamically injected -->
+      </div>
+    </div>
+  </div>
+
+  <div id="driver-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>🚗 Driver Focus View HUD</h3>
+        <button class="modal-close-btn" onclick="closeDriverModal()">&times;</button>
+      </div>
+      <div style="background: #121a12; color: #7bc96e; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a3b19b;">Active Highway Navigation</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0;">NH-27 Sonapur Bypass</div>
+        <div style="font-size: 1.1rem; color: #fff; font-weight: 700;">In 1.4 km: Turn Right for NW-2 River Barge Terminal</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="incident-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📝 Report Field Incident (Delta-CRDT Offline Sync)</h3>
+        <button class="modal-close-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <form onsubmit="submitIncidentReport(event)">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inc-category" class="form-select">
+            <option value="Landslide">Landslide / Mudslide</option>
+            <option value="Monsoon Flood">Monsoon Flash Flood</option>
+            <option value="Bridge Degradation">Bridge Shear Defect</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Highway / Corridor</label>
+          <input type="text" id="inc-highway" class="form-control" value="NH-27 Sonapur Pass" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Field Notes</label>
+          <textarea id="inc-notes" class="form-control" rows="3" required>Slope failure observed at KM 141. BRO equipment required.</textarea>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;">Submit Field Report</button>
+      </form>
+    </div>
+  </div>
+
+  <button class="voice-widget-btn" onclick="toggleVoiceWidget()" title="Bhashini Voice Assistant">🗣️</button>
+  <div id="voice-assistant-panel" class="voice-assistant-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <strong style="font-size: 0.9rem; color: var(--accent-forest);">🗣️ Bhashini Voice Assistant</strong>
+      <span class="badge badge-info">10 Languages</span>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Speak or type queries in English, Hindi, Assamese, Manipuri, Mizo, Bengali, etc.</p>
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Ask: 'Show active landslides'..." onkeydown="if(event.key==='Enter'){ showToast('Bhashini Query: Finding active landslides...'); toggleVoiceWidget(); }">
+    </div>
+  </div>
+
+  <div id="live-toast" class="live-toast" style="display: none;">
+    <div class="toast-ping"></div>
+    <div style="font-size: 0.8rem;">
+      <strong style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-forest);">Live Alert</strong>
+      <span id="toast-msg">Notification message</span>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong style="color: var(--text-primary);" class="serif-font">NE-AURA · Smart India Hackathon 2026 (SIH 26002)</strong>
+        <p style="font-size: 0.75rem;">Autonomous Multi-Modal Logistics & Public Fund Governance Platform</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/script.js"></script>
+  <script src="./js/Live_fleet.js"></script>
+</body>
+</html>

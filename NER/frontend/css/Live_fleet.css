@@ -1,0 +1,124 @@
+/* ============================================================================
+   NE-AURA (SIH 26002) - LIVE FLEET & ULIP STYLESHEET
+   Page-Specific Styles for Telematics table, ULIP badge, & speed status
+   ============================================================================ */
+
+.telematics-row-active {
+  background-color: rgba(5, 150, 105, 0.04);
+}
+
+.telematics-row-delayed {
+  background-color: rgba(226, 114, 91, 0.06);
+}
+
+.ulip-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.speed-gauge-pill {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg-card-subtle);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  border: 1px solid var(--border-subtle);
+}
+
+.ulip-search-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* ULIP Gateway Cards */
+.ulip-gateway-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.ulip-gateway-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-forest);
+}
+
+/* Fleet KPI Cards */
+.fleet-kpi-card {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+/* Filter Chips Toolbar */
+.fleet-filter-chip {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fleet-filter-chip:hover, .fleet-filter-chip.active {
+  background: var(--accent-forest);
+  color: #ffffff;
+  border-color: var(--accent-forest);
+}
+
+/* FASTag Live Stream Ticker */
+.fastag-stream-box {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+
+.fastag-scan-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed var(--border-subtle);
+  font-size: 0.78rem;
+}
+
+.fastag-scan-item:last-child {
+  border-bottom: none;
+}
+
+/* Cold-Chain Temp Alert Card */
+.reefer-alert-card {
+  background: rgba(226, 114, 91, 0.08);
+  border: 1px solid rgba(226, 114, 91, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+
+/* Driver Fatigue Box */
+.fatigue-safety-box {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+
+

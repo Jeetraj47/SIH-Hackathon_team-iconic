@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NE-AURA: AI Route Optimizer · SIH 26002</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/AI_Route_Optimizer.css">
+</head>
+<body>
+
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand-title">
+        <div class="brand-logo">NE</div>
+        <div class="brand-text">
+          <h1 class="serif-font">NE-AURA <span class="badge badge-success">SIH 26002</span></h1>
+          <p>Smart India Hackathon 2026 · North Eastern Region Logistics & Public Audit</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="Report_field_incident.html" class="btn btn-outline btn-sm">📝 Report Incident</a>
+        <button class="btn btn-secondary btn-sm" onclick="openDriverModal()">🚗 Driver View</button>
+        <button class="btn btn-danger btn-sm" onclick="toggleLandslideSimulation()">🚨 Trigger Landslide</button>
+
+        <div class="three-dots-container">
+          <button class="three-dots-btn" id="three-dots-btn" onclick="toggleThreeDotsMenu(event)" title="More Options">⋮</button>
+          <div class="three-dots-dropdown" id="three-dots-dropdown">
+            <div class="dropdown-header">More Pages & Services</div>
+            <a href="About_us.html" class="dropdown-item">ℹ️ About Us & Services</a>
+            <a href="resource.html" class="dropdown-item">📑 Resources & Open Data</a>
+            <a href="SOS.html" class="dropdown-item">📞 SOS</a>
+            <a href="Profile.html" class="dropdown-item">👤 Profile</a>
+            <a href="Setting.html" class="dropdown-item">⚙️ Setting</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-scroll-wrapper">
+      <div class="tabs-container">
+        <a href="index.html" class="tab-btn">📊 Executive Dashboard</a>
+        <a href="Gis_map.html" class="tab-btn">🗺️ GIS Map</a>
+        <a href="AI_Route_Optimizer.html" class="tab-btn active">🧠 AI Route Optimizer</a>
+        <a href="Live_fleet.html" class="tab-btn">🚛 Live Fleet & ULIP</a>
+        <a href="supply_chain.html" class="tab-btn">🌾 Supply Chain & Spoilage</a>
+        <a href="Public_fund.html" class="tab-btn">🏛️ Public Fund Governance</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <section class="tab-pane active">
+
+      <!-- Page Header -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title">
+          <h2>🧠 ST-GCN + GRU Spatio-Temporal AI Route Optimizer</h2>
+          <span class="badge badge-success">Real-Time RADR Inference Active</span>
+        </div>
+        <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-top: 0.25rem;">
+          Predicts highway landslide disruptions across 1,420 km of North Eastern mountain passes, dynamically calculating optimal intermodal handoffs between trucks, inland waterways, broad-gauge freight rail, and high-altitude cableways.
+        </p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <!-- Left: Form & Disruption Simulator -->
+        <div>
+          <!-- Calculation Form -->
+          <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header-title">
+              <h3>🎯 Route Parameter Configuration</h3>
+            </div>
+            <form id="aiRouterForm" onsubmit="calculateAIRoute(event)">
+              <div class="form-group">
+                <label class="form-label">Origin Freight Hub</label>
+                <select id="originSelect" class="form-select">
+                  <option value="Guwahati Multi-Modal Hub">Guwahati Multi-Modal Logistics Park (Assam)</option>
+                  <option value="Tezpur Base">Tezpur Strategic Transit Base (Assam)</option>
+                  <option value="Shillong Bypass">Shillong Bypass Freight Hub (Meghalaya)</option>
+                  <option value="Jorhat Terminal">Jorhat Agricultural Distribution Hub (Assam)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Destination Node</label>
+                <select id="destSelect" class="form-select">
+                  <option value="Silchar Hospital Node">Silchar Medical Hub & Hospital (Assam)</option>
+                  <option value="STNM Gangtok">STNM Hospital Gangtok (Sikkim)</option>
+                  <option value="JNIMS Imphal">JNIMS Hospital Imphal (Manipur)</option>
+                  <option value="Agartala Checkpost">Agartala Integrated Check Post (Tripura)</option>
+                  <option value="Itanagar Base">Itanagar Emergency Supply Base (Arunachal Pradesh)</option>
+                </select>
+              </div>
+
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label">Cargo Priority & Cryo Type</label>
+                  <select id="cargoTypeSelect" class="form-select">
+                    <option value="Essential Vaccines">Essential Vaccines & Cryo Meds (+2°C)</option>
+                    <option value="Lakadong Turmeric">GI Lakadong Turmeric (High Moisture)</option>
+                    <option value="Medical Oxygen">Medical Oxygen Cylinders</option>
+                    <option value="PDS Grains">PDS Rice & Wheat Rakes</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Preferred Transit Mode</label>
+                  <select id="modeSelect" class="form-select">
+                    <option value="AI Multi-Modal Dynamic Swap">🤖 AI Multi-Modal Dynamic Swap (Auto)</option>
+                    <option value="Direct Truck Highway">🚛 Direct Highway Trucking (6-Axle)</option>
+                    <option value="Brahmaputra Waterway">🚢 NW-2 Waterway River Barge</option>
+                    <option value="FOIS Broad-Gauge Rail">🚆 FOIS Freight Rail Rake</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                ⚡ Calculate ST-GCN Optimal Multi-Modal Route
+              </button>
+            </form>
+          </div>
+
+          <!-- Multi-Criteria Optimization Preference Sliders -->
+          <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header-title">
+              <h3>🎚️ Multi-Criteria Optimization Tuning Controls</h3>
+              <span class="badge badge-success" id="tuningScoreBadge">ST-GCN Score: 98.4 / 100</span>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+              Tune algorithm priority weights for real-time Dijkstra A* pathfinding calculation.
+            </p>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.2rem;">
+                <label>💰 Freight Cost Minimization Weight</label>
+                <strong id="wCostVal">85%</strong>
+              </div>
+              <input type="range" class="range-slider-input" min="0" max="100" value="85" oninput="updateOptimizationWeights()">
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.2rem;">
+                <label>⏱️ Transit Speed & ETA SLA Weight</label>
+                <strong id="wSpeedVal">70%</strong>
+              </div>
+              <input type="range" class="range-slider-input" min="0" max="100" value="70" oninput="updateOptimizationWeights()">
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.2rem;">
+                <label>🛡️ Landslide Safety & Slope Defect Avoidance</label>
+                <strong id="wSafetyVal" style="color: var(--accent-forest);">95% (Priority)</strong>
+              </div>
+              <input type="range" class="range-slider-input" min="0" max="100" value="95" oninput="updateOptimizationWeights()">
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.2rem;">
+                <label>❄️ Cold-Chain Freshness Preservation Weight</label>
+                <strong id="wSpoilageVal" style="color: var(--accent-forest);">90%</strong>
+              </div>
+              <input type="range" class="range-slider-input" min="0" max="100" value="90" oninput="updateOptimizationWeights()">
+            </div>
+          </div>
+
+          <!-- Terrain & Climate Disruption Simulator -->
+          <div class="glass-card">
+            <div class="card-header-title">
+              <h3>🎛️ Dynamic Monsoon & Terrain Factor Simulator</h3>
+              <span class="badge badge-info">Interactive Sensitivity Test</span>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Adjust environmental factors to test real-time ST-GCN graph risk score fluctuations along Sonapur NH-27 pass.
+            </p>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
+                <label>🌧️ Rainfall Intensity (mm/hr)</label>
+                <strong id="rainVal" style="color: var(--accent-forest);">85 mm/hr</strong>
+              </div>
+              <input type="range" class="range-slider-input" min="0" max="200" value="85" oninput="updateSimulatorValues()">
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
+                <label>🏔️ Slope Shear Angle Defect</label>
+                <strong id="slopeVal" style="color: var(--accent-terracotta);">48° Angle</strong>
+              </div>
+              <input type="range" class="range-slider-input" min="15" max="65" value="48" oninput="updateSimulatorValues()">
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem;">
+                <label>🌫️ Mountain Visibility / Fog</label>
+                <strong id="visVal" style="color: var(--accent-terracotta);">120 meters</strong>
+              </div>
+              <input type="range" class="range-slider-input" min="50" max="2000" value="120" oninput="updateSimulatorValues()">
+            </div>
+
+            <div style="background: var(--bg-card-subtle); padding: 0.75rem 1rem; border-radius: var(--radius-md); border-left: 4px solid var(--accent-terracotta); display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
+              <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Calculated Landslide Risk Index</div>
+                <div id="simRiskScore" style="font-size: 1.2rem; font-weight: 800; color: var(--accent-terracotta);">0.84 · CRITICAL THREAT</div>
+              </div>
+              <span class="badge badge-danger">Highway Reroute Mandated</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Route Comparison, Elevation Profile & Node Hop Timeline -->
+        <div>
+          <!-- Intermodal Route Comparison Matrix -->
+          <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header-title">
+              <h3>⚡ Intermodal Route Comparison Matrix</h3>
+              <button class="btn btn-success btn-sm" onclick="openWaybillModal()">📜 Dispatch ULIP e-Waybill</button>
+            </div>
+
+            <!-- Route B (Recommended) -->
+            <div class="route-option-card recommended">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+                <div>
+                  <span class="badge badge-success" style="font-size: 0.68rem; margin-bottom: 0.2rem;">RECOMMENDED BY ST-GCN</span>
+                  <h4 style="font-size: 0.95rem; color: var(--accent-forest);">Route B: NW-2 River Barge ➔ Lumding Broad-Gauge Rail</h4>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 1.1rem; font-weight: 800; color: var(--accent-forest);">₹9,800</span>
+                  <span style="display: block; font-size: 0.68rem; color: #86efac;">-31% Cost Savings</span>
+                </div>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                Bypasses landslide-damaged Sonapur NH-27 pass. Transfers reefer containers to river barge at Pandu Port to Lumding Rail Junction.
+              </p>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; border-top: 1px dashed var(--border-subtle); padding-top: 0.5rem;">
+                <span><strong>Distance:</strong> 395 km</span>
+                <span><strong>ETA:</strong> 5.4 Hours</span>
+                <span><strong>Landslide Risk:</strong> <span class="badge badge-success" style="font-size: 0.65rem;">0.12 LOW</span></span>
+                <span><strong>Spoilage Risk:</strong> 2.1%</span>
+                <span><strong>CO₂ Abated:</strong> 1.4 Tons</span>
+              </div>
+            </div>
+
+            <!-- Route A (Primary Highway) -->
+            <div class="route-option-card">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+                <div>
+                  <span class="badge badge-danger" style="font-size: 0.68rem; margin-bottom: 0.2rem;">DISRUPTED BY LANDSLIDE</span>
+                  <h4 style="font-size: 0.95rem; color: var(--text-primary);">Route A: Direct Highway Trucking (NH-27 ➔ NH-44)</h4>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary);">₹14,200</span>
+                  <span style="display: block; font-size: 0.68rem; color: var(--text-muted);">Standard Toll Rate</span>
+                </div>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                Direct 6-axle highway transit. Currently blocked at Sonapur KM 141 due to ongoing slope failure.
+              </p>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; border-top: 1px dashed var(--border-subtle); padding-top: 0.5rem;">
+                <span><strong>Distance:</strong> 340 km</span>
+                <span><strong>ETA:</strong> 8.2 Hours (+3.1h Delay)</span>
+                <span><strong>Landslide Risk:</strong> <span class="badge badge-danger" style="font-size: 0.65rem;">0.84 HIGH</span></span>
+                <span><strong>Spoilage Risk:</strong> 28.4%</span>
+              </div>
+            </div>
+
+            <!-- Route C (Cableway & Drone) -->
+            <div class="route-option-card">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem;">
+                <div>
+                  <span class="badge badge-info" style="font-size: 0.68rem; margin-bottom: 0.2rem;">EMERGENCY AIR-LIFT</span>
+                  <h4 style="font-size: 0.95rem; color: var(--text-primary);">Route C: High-Altitude Ropeway Pod ➔ Cargo Drone</h4>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 1.1rem; font-weight: 800; color: var(--accent-violet);">₹22,500</span>
+                  <span style="display: block; font-size: 0.68rem; color: var(--accent-violet);">Priority Medical Rate</span>
+                </div>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                High-priority emergency air-lift bypassing all road washouts directly to hospital helipads.
+              </p>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; font-size: 0.78rem; border-top: 1px dashed var(--border-subtle); padding-top: 0.5rem;">
+                <span><strong>Distance:</strong> 280 km</span>
+                <span><strong>ETA:</strong> 3.1 Hours</span>
+                <span><strong>Landslide Risk:</strong> <span class="badge badge-success" style="font-size: 0.65rem;">0.08 LOW</span></span>
+                <span><strong>Spoilage Risk:</strong> 0.5%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mountain Topography & Route Elevation Cross-Section -->
+          <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header-title">
+              <h3>⛰️ Mountain Topography & Altitude Elevation Profile</h3>
+              <span class="badge badge-info">3D GIS Cross-Section</span>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+              Displays altitude changes along the transit route highlighting high-shear slope hazard zones.
+            </p>
+
+            <div class="elevation-chart-container">
+              <div class="elevation-bar-flex">
+                <div class="elevation-col" style="height: 15%;">
+                  <span class="elevation-col-label">Guwahati (55m)</span>
+                </div>
+                <div class="elevation-col river" style="height: 10%;">
+                  <span class="elevation-col-label">Pandu NW-2 (35m)</span>
+                </div>
+                <div class="elevation-col" style="height: 85%;">
+                  <span class="elevation-col-label">Shillong (1,520m)</span>
+                </div>
+                <div class="elevation-col hazard" style="height: 60%;">
+                  <span class="elevation-col-label">⚠️ Sonapur (920m)</span>
+                </div>
+                <div class="elevation-col" style="height: 35%;">
+                  <span class="elevation-col-label">Lumding (145m)</span>
+                </div>
+                <div class="elevation-col" style="height: 20%;">
+                  <span class="elevation-col-label">Silchar (35m)</span>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem;">
+                <span>0 km (Origin)</span>
+                <span>NW-2 Barge Corridor (140 km)</span>
+                <span>Rail Bypass (160 km)</span>
+                <span>395 km (Dest)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ESG Carbon Footprint & Green Logistics Card -->
+          <div class="esg-metric-box" style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="color: var(--accent-forest); font-size: 0.88rem;" class="serif-font">🌱 ESG Carbon Footprint & Green Freight Impact</strong>
+              <span class="badge badge-success">PM Gati Shakti Compliant</span>
+            </div>
+            <div class="grid-3" style="text-align: center;">
+              <div>
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">CO₂ Emissions Abated</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-forest);">1.42 Tons</div>
+                <span style="font-size: 0.68rem; color: #86efac;">-64% vs Pure Trucking</span>
+              </div>
+              <div>
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Diesel Conserved</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-forest);">420 Liters</div>
+                <span style="font-size: 0.68rem; color: #86efac;">Inland Barge Efficiency</span>
+              </div>
+              <div>
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">Green Freight Credit</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-forest);">85.4 Points</div>
+                <span style="font-size: 0.68rem; color: #86efac;">ISO 14064 Verified</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step-by-Step GNN Segment Node Hop Timeline -->
+          <div class="glass-card" style="margin-bottom: 1.5rem;">
+            <div class="card-header-title">
+              <h3>🗺️ Step-by-Step GNN Segment Node Hop Timeline</h3>
+              <span class="badge badge-primary">Recommended Route B Breakdown</span>
+            </div>
+
+            <div class="timeline-hop-list">
+              <div class="timeline-hop-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700;">
+                  <span>Hop 1: Guwahati Logistics Park ➔ Pandu Port</span>
+                  <span class="badge badge-info" style="font-size: 0.65rem;">18 km · 25 mins</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Reefer container dispatch via NH-27 city bypass to Brahmaputra river barge terminal.</div>
+              </div>
+
+              <div class="timeline-hop-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700;">
+                  <span>Hop 2: Pandu Port ➔ Lumding River Hub (NW-2)</span>
+                  <span class="badge badge-success" style="font-size: 0.65rem;">140 km · 2.2 hrs</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Solar-powered reefer barge transit along navigable NW-2 Brahmaputra current. Zero slope risk.</div>
+              </div>
+
+              <div class="timeline-hop-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700;">
+                  <span>Hop 3: Lumding Junction ➔ Badarpur Freight Rake</span>
+                  <span class="badge badge-warning" style="font-size: 0.65rem;">160 km · 2.1 hrs</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Intermodal swap to FOIS broad-gauge electrified freight rail rake through hill section tunnels.</div>
+              </div>
+
+              <div class="timeline-hop-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700;">
+                  <span>Hop 4: Badarpur Rake Hub ➔ Silchar Hospital</span>
+                  <span class="badge badge-info" style="font-size: 0.65rem;">37 km · 45 mins</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">Final-mile cold-chain EV truck delivery directly to hospital cryo-storage facility.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrhenius PINN Shelf-Life SLA Panel -->
+          <div class="arrhenius-card-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <strong style="font-size: 0.88rem; color: var(--accent-forest);" class="serif-font">🧪 Arrhenius PINN Cargo Spoilage SLA Forecast</strong>
+              <span class="route-badge-pinn">Physics-Informed Model</span>
+            </div>
+
+            <div class="grid-3" style="text-align: center;">
+              <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Container Temp</div>
+                <div class="pinn-metric-number">+2.1°C</div>
+                <span style="font-size: 0.7rem; color: var(--text-muted);">Cryo Maintained</span>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Remaining Shelf Life</div>
+                <div class="pinn-metric-number">142 Hrs</div>
+                <span style="font-size: 0.7rem; color: #86efac;">98.8% Buffer SLA</span>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted);">Quality Degradation</div>
+                <div class="pinn-metric-number">0.8%</div>
+                <span style="font-size: 0.7rem; color: #86efac;">Optimal Grade</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ULIP e-Waybill Pre-Clearance Modal -->
+  <div id="waybill-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📜 ULIP Digital e-Waybill & FASTag Pre-Clearance Pass</h3>
+        <button class="modal-close-btn" onclick="closeWaybillModal()">&times;</button>
+      </div>
+      <div class="waybill-pass-box">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 0.75rem;">
+          <div>
+            <div style="font-size: 0.7rem; color: #9ca3af; text-transform: uppercase;">ULIP Transit Pass ID</div>
+            <strong style="font-size: 1.1rem; color: #86efac;">ULIP-NE-2026-884920</strong>
+          </div>
+          <span class="badge badge-success">FASTag Pre-Cleared</span>
+        </div>
+
+        <div class="qr-code-placeholder">
+          <!-- Stylized QR Code Representation -->
+          <svg width="100" height="100" viewBox="0 0 100 100" fill="#111827">
+            <rect x="0" y="0" width="30" height="30"/>
+            <rect x="5" y="5" width="20" height="20" fill="#fff"/>
+            <rect x="10" y="10" width="10" height="10"/>
+            <rect x="70" y="0" width="30" height="30"/>
+            <rect x="75" y="5" width="20" height="20" fill="#fff"/>
+            <rect x="80" y="10" width="10" height="10"/>
+            <rect x="0" y="70" width="30" height="30"/>
+            <rect x="5" y="75" width="20" height="20" fill="#fff"/>
+            <rect x="10" y="80" width="10" height="10"/>
+            <rect x="40" y="10" width="15" height="15"/>
+            <rect x="40" y="40" width="20" height="20"/>
+            <rect x="70" y="40" width="15" height="15"/>
+            <rect x="40" y="70" width="25" height="25"/>
+            <rect x="70" y="75" width="15" height="15"/>
+          </svg>
+        </div>
+
+        <div style="font-size: 0.78rem; color: #d1d5db; line-height: 1.6;">
+          <div>• <strong>Cargo:</strong> Essential Cryo Vaccines (+2°C Reefer)</div>
+          <div>• <strong>Route Handoff:</strong> Pandu Port (NW-2) ➔ Lumding Broad Gauge Rake</div>
+          <div>• <strong>VAHAN Vehicle:</strong> AS-01-GC-9420 (6-Axle EV Reefer)</div>
+          <div>• <strong>FOIS Rake Booking:</strong> RAKE-BG-77492</div>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="showToast('e-Waybill Dispatched to Driver HUD & VAHAN Gateway!'); closeWaybillModal();">
+          📲 Send e-Waybill Pass to Driver View HUD
+        </button>
+      </div>
+    </div>
+  </div>
+
+    </section>
+  </main>
+
+  <div id="driver-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>🚗 Driver Focus View HUD</h3>
+        <button class="modal-close-btn" onclick="closeDriverModal()">&times;</button>
+      </div>
+      <div style="background: #121a12; color: #7bc96e; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a3b19b;">Active Highway Navigation</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0;">NH-27 Sonapur Bypass</div>
+        <div style="font-size: 1.1rem; color: #fff; font-weight: 700;">In 1.4 km: Turn Right for NW-2 River Barge Terminal</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="incident-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📝 Report Field Incident (Delta-CRDT Offline Sync)</h3>
+        <button class="modal-close-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <form onsubmit="submitIncidentReport(event)">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inc-category" class="form-select">
+            <option value="Landslide">Landslide / Mudslide</option>
+            <option value="Monsoon Flood">Monsoon Flash Flood</option>
+            <option value="Bridge Degradation">Bridge Shear Defect</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Highway / Corridor</label>
+          <input type="text" id="inc-highway" class="form-control" value="NH-27 Sonapur Pass" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Field Notes</label>
+          <textarea id="inc-notes" class="form-control" rows="3" required>Slope failure observed at KM 141. BRO equipment required.</textarea>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;">Submit Field Report</button>
+      </form>
+    </div>
+  </div>
+
+  <button class="voice-widget-btn" onclick="toggleVoiceWidget()" title="Bhashini Voice Assistant">🗣️</button>
+  <div id="voice-assistant-panel" class="voice-assistant-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <strong style="font-size: 0.9rem; color: var(--accent-forest);">🗣️ Bhashini Voice Assistant</strong>
+      <span class="badge badge-info">10 Languages</span>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Speak or type queries in English, Hindi, Assamese, Manipuri, Mizo, Bengali, etc.</p>
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Ask: 'Show active landslides'..." onkeydown="if(event.key==='Enter'){ showToast('Bhashini Query: Finding active landslides...'); toggleVoiceWidget(); }">
+    </div>
+  </div>
+
+  <div id="live-toast" class="live-toast" style="display: none;">
+    <div class="toast-ping"></div>
+    <div style="font-size: 0.8rem;">
+      <strong style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-forest);">Live Alert</strong>
+      <span id="toast-msg">Notification message</span>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong style="color: var(--text-primary);" class="serif-font">NE-AURA · Smart India Hackathon 2026 (SIH 26002)</strong>
+        <p style="font-size: 0.75rem;">Autonomous Multi-Modal Logistics & Public Fund Governance Platform</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/script.js"></script>
+  <script src="./js/AI_Route_Optimizer.js"></script>
+</body>
+</html>

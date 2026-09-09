@@ -1,0 +1,428 @@
+/* ============================================================================
+   NE-AURA (SIH 26002) - DRIVER FOCUS VIEW & INCIDENT STATUS DASHBOARD
+   Styled to match NE-AURA core design system (Light & Dark Theme support)
+   ============================================================================ */
+
+/* Incident Status Dashboard Grid Layout */
+.dashboard-grid-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-col-left, .grid-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.grid-col-center {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Glassmorphism Incident Cards */
+.driver-glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.25s ease;
+}
+
+.driver-glass-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.hud-card-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hud-big-metric {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0 0.8rem;
+}
+
+.hud-metric-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.hud-metric-number {
+  font-size: 4.2rem;
+  font-weight: 900;
+  line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.number-orange { color: var(--accent-terracotta); }
+.number-blue { color: var(--accent-sky); }
+.number-yellow { color: var(--accent-amber); }
+.number-lime { color: var(--accent-emerald); }
+
+.hud-subtext {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.subtext-orange { color: var(--accent-terracotta); }
+.subtext-blue { color: var(--accent-sky); }
+.subtext-yellow { color: var(--accent-amber); }
+.subtext-lime { color: var(--accent-emerald); }
+
+.hud-timestamp {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.4rem;
+}
+
+/* Center Bottom 3 KPI Row */
+.center-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .center-kpi-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpi-mini-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-mini-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--accent-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-mini-number {
+  font-size: 3.2rem;
+  font-weight: 900;
+  color: var(--accent-amber);
+  line-height: 1;
+  margin: 0.2rem 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.kpi-mini-subtext {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-amber);
+}
+
+/* Navigation Turn-by-Turn Header Strip */
+.navigation-alert-strip {
+  background: linear-gradient(135deg, rgba(45, 70, 40, 0.12), rgba(5, 150, 105, 0.12));
+  border: 2px solid var(--accent-emerald);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Arc Gauge SVG Widget */
+.occupancy-gauge-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.75rem;
+  position: relative;
+}
+
+.gauge-svg {
+  width: 140px;
+  height: 75px;
+}
+
+.gauge-bg-path {
+  fill: none;
+  stroke: var(--border-color);
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.gauge-fill-path {
+  fill: none;
+  stroke: var(--accent-emerald);
+  stroke-width: 12;
+  stroke-linecap: round;
+  stroke-dasharray: 188;
+  stroke-dashoffset: 141; /* ~25% filled */
+}
+
+.gauge-text {
+  position: absolute;
+  bottom: 4px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ============================================================================
+   AUTOMOTIVE GPS TURN-BY-TURN NAVIGATION HUD WIDGET (Matching Spec Image)
+   ============================================================================ */
+.nav-hud-widget-box {
+  background: #cfd6df;
+  border-radius: 24px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 2px solid #b0bbc7;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+body.dark-theme .nav-hud-widget-box {
+  background: #1e2630;
+  border-color: #2e3a47;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Top Row (Turn Arrow + Distance) */
+.nav-hud-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.nav-hud-dark-card {
+  background: #3c4b57;
+  border-radius: 16px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.nav-turn-icon-svg {
+  width: 64px;
+  height: 64px;
+}
+
+.nav-distance-text {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Middle 2x2 Chips Grid */
+.nav-hud-chips-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Left POI Chips (Light Slate Capsule) */
+.nav-poi-chip {
+  background: #e9edf1;
+  border-radius: 14px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #2b3640;
+  font-weight: 800;
+  font-size: 1.1rem;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+body.dark-theme .nav-poi-chip {
+  background: #2b3640;
+  color: #ffffff;
+}
+
+.chip-icon-badge {
+  background: #2b3640;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+body.dark-theme .chip-icon-badge {
+  background: #3c4b57;
+}
+
+/* Right Trip Info Chips (Dark Slate Capsule) */
+.nav-trip-chip {
+  background: #3c4b57;
+  border-radius: 14px;
+  padding: 0.55rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.chip-circle-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+/* Bottom Control Row (3 Pill Buttons) */
+.nav-hud-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  background: #b0bbc7;
+  padding: 0.5rem;
+  border-radius: 18px;
+}
+
+body.dark-theme .nav-hud-btn-row {
+  background: #141b22;
+}
+
+.nav-hud-pill-btn {
+  background: #3c4b57;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+}
+
+.nav-hud-pill-btn:hover {
+  background: #4d5f6e;
+  transform: translateY(-1px);
+}
+
+.nav-hud-pill-btn:active {
+  transform: translateY(1px);
+}
+
+/* Action Toolbar */
+.driver-action-toolbar {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+/* Cold-Chain Reefer Sensor Telemetry Strip */
+.reefer-sensor-strip {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(2, 132, 199, 0.08));
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Slope Hazard Warning Pill */
+.slope-warning-pill {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  color: #ffffff;
+  padding: 0.6rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+  animation: pulseWarning 2s infinite ease-in-out;
+}
+
+@keyframes pulseWarning {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.02); }
+}
+
+/* Emergency SOS Panic Button */
+.sos-panic-btn {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: #ffffff;
+  border: 2px solid #f87171;
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sos-panic-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.6);
+}
+
+/* Vehicle Health Meter Box */
+.vehicle-health-box {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-top: 1rem;
+}
+

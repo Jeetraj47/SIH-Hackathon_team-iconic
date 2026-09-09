@@ -1,0 +1,115 @@
+/* ============================================================================
+   NE-AURA (SIH 26002) - PUBLIC FUND GOVERNANCE STYLESHEET
+   Page-Specific Styles for Public Audit, Escrow milestones, & Merkle SHA-256 Badges
+   ============================================================================ */
+
+.audit-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.audit-kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.1rem;
+  text-align: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.audit-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-forest);
+}
+
+.audit-kpi-val {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent-forest);
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
+}
+
+.audit-kpi-lbl {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.3rem;
+}
+
+.escrow-flow-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.escrow-step-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-forest);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  font-size: 0.85rem;
+}
+
+.escrow-step-card.active {
+  border-left-color: var(--accent-emerald, #10b981);
+}
+
+.escrow-step-card.pending {
+  border-left-color: var(--accent-amber, #f59e0b);
+}
+
+.audit-hash-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--accent-sky, #0284c7);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(2, 132, 199, 0.3);
+  word-break: break-all;
+  display: inline-block;
+  margin-top: 0.4rem;
+}
+
+[data-theme="dark"] .audit-hash-code {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.state-budget-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.state-budget-item {
+  font-size: 0.82rem;
+}
+
+.state-budget-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.governance-tier-badge {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-forest);
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+}
+
+[data-theme="dark"] .governance-tier-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+

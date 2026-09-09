@@ -1,0 +1,184 @@
+/* ============================================================================
+   NE-AURA (SIH 26002) - AI ROUTE OPTIMIZER STYLESHEET
+   Page-Specific Styles for Arrhenius PINN models, route cards, & sliders
+   ============================================================================ */
+
+.arrhenius-card-container {
+  background: linear-gradient(135deg, rgba(45, 70, 40, 0.05), rgba(226, 114, 91, 0.05));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+body.dark-theme .arrhenius-card-container {
+  background: linear-gradient(135deg, rgba(36, 50, 36, 0.4), rgba(226, 114, 91, 0.1));
+}
+
+.route-option-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  background: var(--bg-card);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.route-option-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-forest);
+}
+
+.route-option-card.recommended {
+  border: 2px solid var(--accent-forest);
+  background: linear-gradient(135deg, rgba(45, 70, 40, 0.08), rgba(65, 99, 58, 0.04));
+}
+
+.route-badge-pinn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--accent-violet);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pinn-metric-number {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--accent-forest);
+  line-height: 1.1;
+}
+
+body.dark-theme .pinn-metric-number {
+  color: #7bc96e;
+}
+
+/* Timeline Node Hops */
+.timeline-hop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+}
+
+.timeline-hop-list::before {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background: var(--accent-forest);
+  opacity: 0.4;
+}
+
+.timeline-hop-item {
+  position: relative;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+}
+
+.timeline-hop-item::before {
+  content: '';
+  position: absolute;
+  left: -1.35rem;
+  top: 0.85rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-forest);
+  box-shadow: 0 0 0 3px var(--bg-card);
+}
+
+.range-slider-input {
+  width: 100%;
+  accent-color: var(--accent-forest);
+}
+
+/* Elevation Profile Chart Bar */
+.elevation-chart-container {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.elevation-bar-flex {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  height: 120px;
+  padding-top: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.elevation-col {
+  flex: 1;
+  background: linear-gradient(to top, var(--accent-forest), #86efac);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  position: relative;
+  transition: height 0.3s ease;
+}
+
+.elevation-col.hazard {
+  background: linear-gradient(to top, var(--accent-terracotta), #f87171);
+}
+
+.elevation-col.river {
+  background: linear-gradient(to top, #0284c7, #38bdf8);
+}
+
+.elevation-col-label {
+  position: absolute;
+  top: -1.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ESG Metrics */
+.esg-metric-box {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+/* Waybill Pass Modal Box */
+.waybill-pass-box {
+  background: #111827;
+  color: #f9fafb;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.qr-code-placeholder {
+  width: 130px;
+  height: 130px;
+  background: #ffffff;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  margin: 1rem auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+

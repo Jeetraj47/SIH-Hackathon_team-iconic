@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NE-AURA: Resources & Open Data Hub · SIH 26002</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/resource.css">
+</head>
+<body>
+
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand-title">
+        <div class="brand-logo">NE</div>
+        <div class="brand-text">
+          <h1 class="serif-font">NE-AURA <span class="badge badge-success">SIH 26002</span></h1>
+          <p>Smart India Hackathon 2026 · North Eastern Region Logistics & Public Audit</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="Report_field_incident.html" class="btn btn-outline btn-sm">📝 Report Incident</a>
+        <button class="btn btn-secondary btn-sm" onclick="openDriverModal()">🚗 Driver View</button>
+        <button class="btn btn-danger btn-sm" onclick="toggleLandslideSimulation()">🚨 Trigger Landslide</button>
+
+        <div class="three-dots-container">
+          <button class="three-dots-btn" id="three-dots-btn" onclick="toggleThreeDotsMenu(event)" title="More Options">⋮</button>
+          <div class="three-dots-dropdown" id="three-dots-dropdown">
+            <div class="dropdown-header">More Pages & Services</div>
+            <a href="About_us.html" class="dropdown-item">ℹ️ About Us & Services</a>
+            <a href="resource.html" class="dropdown-item">📑 Resources & Open Data</a>
+            <a href="SOS.html" class="dropdown-item">📞 SOS</a>
+            <a href="Profile.html" class="dropdown-item">👤 Profile</a>
+            <a href="Setting.html" class="dropdown-item">⚙️ Setting</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-scroll-wrapper">
+      <div class="tabs-container">
+        <a href="index.html" class="tab-btn">📊 Executive Dashboard</a>
+        <a href="Gis_map.html" class="tab-btn">🗺️ GIS Map</a>
+        <a href="AI_Route_Optimizer.html" class="tab-btn">🧠 AI Route Optimizer</a>
+        <a href="Live_fleet.html" class="tab-btn">🚛 Live Fleet & ULIP</a>
+        <a href="supply_chain.html" class="tab-btn">🌾 Supply Chain & Spoilage</a>
+        <a href="Public_fund.html" class="tab-btn">🏛️ Public Fund Governance</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <section class="tab-pane active">
+      <!-- OGD & PM Gati Shakti Data Compliance Banner -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div>
+            <h2>📑 Open Data & Developer Resources Hub</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.2rem 0 0;">
+              Open Government Data (OGD) Licensed · PM Gati Shakti Interoperability Standards · NDAP Compatible
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <span class="badge badge-success">OGD License</span>
+            <span class="badge badge-info">OpenAPI 3.0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Chips for Datasets -->
+      <div class="filter-chip-group">
+        <button class="filter-chip-btn active" onclick="filterDatasets('all', this)">🌐 All Resources</button>
+        <button class="filter-chip-btn" onclick="filterDatasets('geojson', this)">🗺️ GIS GeoJSON</button>
+        <button class="filter-chip-btn" onclick="filterDatasets('openapi', this)">🧠 OpenAPI Specs</button>
+        <button class="filter-chip-btn" onclick="filterDatasets('csv', this)">📊 CSV Logs</button>
+        <button class="filter-chip-btn" onclick="filterDatasets('pdf', this)">📱 Field Manuals</button>
+      </div>
+
+      <!-- Open Datasets Catalog Grid -->
+      <div class="resource-card-grid" id="dataset-cards-grid">
+        <div class="resource-item-card" data-cat="geojson">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="file-format-badge">GeoJSON / CSV</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">14.2 MB</span>
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--accent-forest); margin-bottom: 0.4rem;">🗺️ NER Road Disruption Dataset</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Historical & real-time landslide blockage data across NH-27, NH-37, NH-10, NH-54, and NH-44.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="showToast('📥 Downloading NER Road Disruption Dataset (GeoJSON)...')">Download Dataset ↓</button>
+        </div>
+
+        <div class="resource-item-card" data-cat="openapi">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="file-format-badge">OpenAPI 3.0 / PDF</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">3.8 MB</span>
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--accent-forest); margin-bottom: 0.4rem;">🧠 GNN Route API Specification</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">REST/gRPC endpoint schemas for ST-GCN risk calculations, RADR optimal routes, and ULIP payload bindings.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="showToast('📥 Downloading GNN API Specification (PDF)...')">Download API Specs ↓</button>
+        </div>
+
+        <div class="resource-item-card" data-cat="pdf">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="file-format-badge">PDF (Multilingual)</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">6.1 MB</span>
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--accent-forest); margin-bottom: 0.4rem;">📱 Field Officer Offline Mobile Guide</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Operating manual for Delta-CRDT offline sync, Bhashini voice navigation, and emergency satellite dispatch.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="showToast('📥 Downloading Field Manual (PDF)...')">Download Manual ↓</button>
+        </div>
+
+        <div class="resource-item-card" data-cat="geojson">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="file-format-badge">GeoJSON</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">8.4 MB</span>
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--accent-forest); margin-bottom: 0.4rem;">🚢 Brahmaputra NW-2 Hydrographic Charts</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Bathymetric soundings & seasonal river gauge levels for barge navigation between Pandu and Dhubri.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="showToast('📥 Downloading NW-2 Hydrographic Charts (GeoJSON)...')">Download Charts ↓</button>
+        </div>
+
+        <div class="resource-item-card" data-cat="csv">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="file-format-badge">CSV</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">22.1 MB</span>
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--accent-forest); margin-bottom: 0.4rem;">🌡️ Reefer Cold-Chain Telemetry Logs</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">High-frequency Arrhenius temperature sensor logs for essential cryo vaccine containers.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="showToast('📥 Downloading Thermal Telemetry Logs (CSV)...')">Download Logs ↓</button>
+        </div>
+
+        <div class="resource-item-card" data-cat="csv">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="file-format-badge">JSON</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">5.2 MB</span>
+            </div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--accent-forest); margin-bottom: 0.4rem;">🏛️ MDoNER Public Fund Cryptographic Hashes</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Public SHA-256 Merkle root receipts for 42 verified infrastructure fund disbursements.</p>
+          </div>
+          <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="showToast('📥 Downloading MDoNER Merkle Hashes (JSON)...')">Download Hashes ↓</button>
+        </div>
+      </div>
+
+      <!-- Interactive Developer API Playground -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <h3>⚡ Interactive Developer API Endpoint Playground</h3>
+          <span class="badge badge-success">Live Sandbox</span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Test NE-AURA REST APIs directly from your browser. Select an endpoint to preview live response payloads.
+        </p>
+
+        <div class="grid-2" style="margin-bottom: 1rem;">
+          <div>
+            <label class="form-label">Select API Endpoint</label>
+            <select id="api-endpoint-select" class="form-select" onchange="loadApiPlaygroundPreview()">
+              <option value="stgcn-risk">GET /api/v1/routes/stgcn-risk?corridor=NH-27</option>
+              <option value="ulip-vahan">GET /api/v1/ulip/vahan-record?vehicle=AS01-GC-9012</option>
+              <option value="crdt-mesh">GET /api/v1/crdt/mesh-state?node=CRDT-OFFICER-8849</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm" onclick="executeApiPlaygroundCall()">Execute Query 🚀</button>
+            <button class="btn btn-outline btn-sm" onclick="copyCurlCommand()">Copy cURL 📋</button>
+          </div>
+        </div>
+
+        <pre id="api-response-code" class="api-playground-box">{
+  "status": 200,
+  "endpoint": "/api/v1/routes/stgcn-risk",
+  "corridor": "NH-27 Sonapur Pass",
+  "stgcn_risk_score": 0.84,
+  "disruption_category": "Landslide / Mudslide",
+  "recommended_bypass": "NW-2 Waterway Barge via Pandu Terminal",
+  "est_clearance_hrs": 4.5
+}</pre>
+      </div>
+
+      <!-- 8-State Emergency Directory -->
+      <div class="glass-card">
+        <div class="card-header-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <h3>📞 8-State Emergency Control Room Directory</h3>
+          <input type="text" id="emergency-search" class="form-control" style="max-width: 250px; font-size: 0.8rem;" placeholder="Search State or Service..." oninput="filterEmergencyDirectory()">
+        </div>
+        <div class="table-responsive">
+          <table class="custom-table" id="emergency-table">
+            <thead>
+              <tr>
+                <th>State</th>
+                <th>Disaster Management Control Room</th>
+                <th>Highway Emergency Patrol</th>
+                <th>Medical Oxygen Emergency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Assam</strong></td>
+                <td>1070 / 0361-2237011</td>
+                <td>1033 (NH-27 / NH-37)</td>
+                <td>104 (Assam Health Services)</td>
+              </tr>
+              <tr>
+                <td><strong>Meghalaya</strong></td>
+                <td>0364-2222200</td>
+                <td>1033 (Shillong-Guwahati Pass)</td>
+                <td>108 (NEIGRIHMS Emergency)</td>
+              </tr>
+              <tr>
+                <td><strong>Manipur</strong></td>
+                <td>0385-2443441</td>
+                <td>1033 (Imphal-Dimapur NH-2)</td>
+                <td>108 (RIMS Imphal Oxygen)</td>
+              </tr>
+              <tr>
+                <td><strong>Mizoram</strong></td>
+                <td>0389-2342520</td>
+                <td>1033 (Aizawl World Bank Road)</td>
+                <td>102 (Zoram Medical College)</td>
+              </tr>
+              <tr>
+                <td><strong>Arunachal Pradesh</strong></td>
+                <td>0360-2291116</td>
+                <td>1033 (Trans-Arunachal Highway)</td>
+                <td>108 (TRIHMS Naharlagun)</td>
+              </tr>
+              <tr>
+                <td><strong>Nagaland</strong></td>
+                <td>0370-2270050</td>
+                <td>1033 (Dimapur-Kohima Pass)</td>
+                <td>108 (Naga Hospital Authority)</td>
+              </tr>
+              <tr>
+                <td><strong>Sikkim</strong></td>
+                <td>03592-202664</td>
+                <td>1033 (NH-10 Sevoke Bypass)</td>
+                <td>108 (STNM Gangtok)</td>
+              </tr>
+              <tr>
+                <td><strong>Tripura</strong></td>
+                <td>0381-2416045</td>
+                <td>1033 (NH-8 Agartala Corridor)</td>
+                <td>108 (AGMC Agartala)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="driver-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>🚗 Driver Focus View HUD</h3>
+        <button class="modal-close-btn" onclick="closeDriverModal()">&times;</button>
+      </div>
+      <div style="background: #121a12; color: #7bc96e; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a3b19b;">Active Highway Navigation</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0;">NH-27 Sonapur Bypass</div>
+        <div style="font-size: 1.1rem; color: #fff; font-weight: 700;">In 1.4 km: Turn Right for NW-2 River Barge Terminal</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="incident-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📝 Report Field Incident (Delta-CRDT Offline Sync)</h3>
+        <button class="modal-close-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <form onsubmit="submitIncidentReport(event)">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inc-category" class="form-select">
+            <option value="Landslide">Landslide / Mudslide</option>
+            <option value="Monsoon Flood">Monsoon Flash Flood</option>
+            <option value="Bridge Degradation">Bridge Shear Defect</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Highway / Corridor</label>
+          <input type="text" id="inc-highway" class="form-control" value="NH-27 Sonapur Pass" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Field Notes</label>
+          <textarea id="inc-notes" class="form-control" rows="3" required>Slope failure observed at KM 141. BRO equipment required.</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Attach Field Photo</label>
+          <input type="file" id="modal-photo-input" accept="image/*" style="display: none;" onchange="handlePhotoSelect(event, 'modal-photo-preview', 'modal-photo-preview-box')">
+          <div class="incident-file-dropzone" onclick="triggerPhotoUpload('modal-photo-input')">
+            <div style="font-size: 0.85rem; font-weight: 700;">📷 Click to Add Picture / Attach Photo</div>
+            <div id="modal-photo-preview-box" style="display: none; margin-top: 0.5rem;">
+              <img id="modal-photo-preview" style="max-height: 120px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: none; margin: 0 auto 0.4rem;" alt="Preview">
+              <span class="badge badge-success">Photo Attached & GPS Geotagged</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;">Submit Field Report</button>
+      </form>
+    </div>
+  </div>
+
+  <button class="voice-widget-btn" onclick="toggleVoiceWidget()" title="Bhashini Voice Assistant">🗣️</button>
+  <div id="voice-assistant-panel" class="voice-assistant-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <strong style="font-size: 0.9rem; color: var(--accent-forest);">🗣️ Bhashini Voice Assistant</strong>
+      <span class="badge badge-info">10 Languages</span>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Speak or type queries in English, Hindi, Assamese, Manipuri, Mizo, Bengali, etc.</p>
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Ask: 'Show active landslides'..." onkeydown="if(event.key==='Enter'){ showToast('Bhashini Query: Finding active landslides...'); toggleVoiceWidget(); }">
+    </div>
+  </div>
+
+  <div id="live-toast" class="live-toast" style="display: none;">
+    <div class="toast-ping"></div>
+    <div style="font-size: 0.8rem;">
+      <strong style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-forest);">Live Alert</strong>
+      <span id="toast-msg">Notification message</span>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong style="color: var(--text-primary);" class="serif-font">NE-AURA · Smart India Hackathon 2026 (SIH 26002)</strong>
+        <p style="font-size: 0.75rem;">Autonomous Multi-Modal Logistics & Public Fund Governance Platform</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/script.js"></script>
+  <script src="./js/resource.js"></script>
+</body>
+</html>

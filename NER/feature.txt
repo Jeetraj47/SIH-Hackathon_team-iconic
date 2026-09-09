@@ -1,0 +1,402 @@
+====================================================================================================
+NE-AURA: AI-DRIVEN SMART LOGISTICS, ACCESSIBILITY & PUBLIC FUND GOVERNANCE PLATFORM (NER)
+COMPLETE FEATURE & PAGE-BY-PAGE SPECIFICATION DOCUMENTATION
+Smart India Hackathon (SIH 2026) — Problem Statement SIH 26002
+====================================================================================================
+
+OVERVIEW & PROJECT VISION
+----------------------------------------------------------------------------------------------------
+NE-AURA (North Eastern Autonomous Resilient Architecture) is an enterprise-grade, AI-driven spatio-temporal platform built for North Eastern Region (NER) logistics resilience, disaster mitigation, dynamic multi-modal freight switching, physics-informed perishable cold-chain management, zero-trust public fund governance, and multilingual voice accessibility.
+
+Key Regional Challenges Addressed:
+1. Siliguri Corridor ("Chicken's Neck") single land dependency.
+2. High landslide risk and monsoon flood disruptions along NH-27, NH-37, NH-10, NH-54, and NH-44.
+3. Severe post-harvest agricultural losses of perishables (e.g. GI Lakadong Turmeric, Tripura Queen Pineapple).
+4. Cellular dead zones in steep mountain passes requiring offline-first Delta-CRDT synchronization.
+5. Multilingual & non-literate driver navigation via Bhashini voice AI across 10 regional languages.
+6. Fragmented government logistics data bridged via National ULIP Integrations (VAHAN 4.0, SARATHI, FASTag, FOIS).
+7. MDoNER infrastructure fund accountability using zero-trust Merkle SHA-256 proofs and satellite ViT audits.
+
+
+====================================================================================================
+CORE AI & SYSTEMS ARCHITECTURE BLUEPRINT
+====================================================================================================
+
+1. Spatio-Temporal Graph Convolutional Network (ST-GCN + GRU):
+   - Real-time highway landslide & slope shear risk prediction (<12ms SLA, 94.8% F1 Score).
+   - Dynamic RADR (Risk-Aware Dynamic Routing) multi-modal bypass computation.
+
+2. National ULIP Gateway Integrations (4-Gateway API Suite):
+   - VAHAN 4.0 (Vehicle Registry & Axle Loads)
+   - SARATHI 4.0 (Driver Licensing & Hill Endorsement)
+   - FASTag RFID (Toll Plaza Passage & Velocity Telemetry)
+   - FOIS (Freight Operations Information System Broad-Gauge Rail Freight)
+
+3. Physics-Informed Neural Network (Arrhenius PINN):
+   - Computes perishable thermal decay rate: k(T, H, v) = A · exp(-Ea / R·T) · (1 + 𝛾·H) · (1 + 𝛽·v)
+   - Saves up to ₹42.8 Lakhs/month in perishable crop spoilage.
+
+4. Offline Delta-CRDT Edge Mesh Synchronization:
+   - Conflict-free state vector synchronization for mountain cellular dead zones.
+   - P2P Bluetooth / Wi-Fi Direct mesh broadcasting across peer officer nodes (Zero Data Loss).
+
+5. Bhashini Multilingual Voice AI System:
+   - 10 North Eastern Languages ASR/TTS (<120ms SLA): English, Hindi, Assamese, Manipuri, Bengali, Mizo, Bodo, Kokborok, Nagamese, Tangkhul.
+
+6. Satellite Geo-Audit & Merkle SHA-256 Proofs:
+   - ISRO Sentinel-2 10m Cloud-Penetrating SAR Radar & Vision Transformer (ViT) LiDAR drone point-cloud verification for MDoNER public infrastructure grants.
+
+
+====================================================================================================
+PAGE-BY-PAGE COMPLETE FEATURE & BUTTON BREAKDOWN (12 HTML APPLICATIONS)
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+1. EXECUTIVE COMMAND DASHBOARD (`frontend/index.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Central Executive Command Center providing real-time accessibility monitoring, Leaflet GIS road overview, live vehicle tracking, disaster readiness KPIs, climate resilience radar, multi-modal swap outputs, and Bhashini voice assistant.
+
+[Files & Scripts]
+- HTML: `frontend/index.html`
+- CSS: `frontend/css/index.css`
+- JS: `frontend/js/index.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- ISRO Telemetry Status Ticker Banner: Real-time radar updates, "SYSTEM OPERATIONAL" badge, and quick PDF export.
+- 4 Executive KPI Summary Cards:
+  1. NER Accessibility Index: 79.4% (8 States Operational)
+  2. Active Route Disruptions: 4 Blocked (NH-27 Sonapur & NH-37 Floods)
+  3. Active GPS Fleets: 1,482 Units (Medicines, Vaccines & Grains)
+  4. Disaster Response Readiness: 94.8% (AI Safe Detours Active)
+- Climate Change & Monsoon Resilience Radar Panel:
+  * 4 Climate Telemetry Indicators: Monsoon Rainfall Anomaly (+34%), Glacial Outburst Index (0.64 GLOF), CO₂ Emissions Abated (42.8 Tons CO₂), Regional Resilience Index (78.2 / 100).
+  * Cloudburst Threat Alert Strip: Real-time ISRO/IMD projected precipitation warnings.
+- 8-State Regional Corridor Health Meters:
+  * Progress bars for Assam Belt (92%), Meghalaya Pass (81%), Arunachal Axis (74%), and Manipur Corridor (68%).
+- High-Priority Critical Cargo Tracking Ticker:
+  * Live tracking cards for Essential Cryo Vaccines, Medical Oxygen Cylinders, and PDS Food Grains with real-time ETAs and ULIP verification buttons.
+- Embedded GIS Leaflet Map Canvas (`#gis-map-canvas`):
+  * Interactive map with direct link "Full GIS View →" (`Gis_map.html`).
+- Multi-Modal Emergency RADR Swap Banner (`#multiModalSwapBanner`):
+  * Dynamically reveals 3 intermodal swap stages (NW-2 River Barge ➔ FOIS Rail Rake ➔ Cargo Drones) upon landslide trigger.
+- Header Action Buttons:
+  * "📝 Report Incident": Link to `Report_field_incident.html`.
+  * "🚗 Driver View": Opens Driver Focus HUD Modal.
+  * "🚨 Trigger Landslide": Executes `toggleLandslideSimulation()`.
+  * "3-Dot Menu": Dropdown menu linking to About Us, Resources, SOS, Profile, Setting.
+
+
+----------------------------------------------------------------------------------------------------
+2. GIS MAP INTELLIGENCE LAYER (`frontend/Gis_map.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Geospatial intelligence dashboard rendering interactive Leaflet map tiles covering all 8 North Eastern states with real-time ISRO Sentinel-2 SAR radar telemetry and layer controls.
+
+[Files & Scripts]
+- HTML: `frontend/Gis_map.html`
+- CSS: `frontend/css/Gis_map.css`
+- JS: `frontend/js/Gis_map.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- ISRO Sentinel-2 Satellite Radar Telemetry Strip:
+  * Displays 10m resolution cloud-penetrating Synthetic Aperture Radar (SAR) status.
+- Interactive Map Layer Filter Toolbar:
+  * Chips for `All Layers`, `Active GPS Fleets (1,482)`, `Supply Hubs (9)`, `Disruption Hotspots`, `NW-2 Waterway Ports`.
+- 8-State Regional Focus Quick-Bar:
+  * One-touch smooth map zoom buttons for Assam, Meghalaya, Sikkim, Manipur, and Tripura.
+- Map Tile Layer Switcher:
+  * Instant toggling between Street Map, Satellite Imagery, and Topo Terrain tiles.
+- Brahmaputra River NW-2 Telemetry Box:
+  * Gauge height (+4.2m), current velocity (1.8 m/s), and active river reefer barges (12 Barges).
+- Geospatial Disruption Live Inspector Drawer Card:
+  * Displays clicked hazard metadata (Sonapur Pass NH-27 KM 141, Lat/Long 26.1102° N, 91.9841° E, Risk 0.84, BRO ETA 4.5 hrs).
+- Interactive Route Polyline Overlays & Supply Radius Circles:
+  * Dynamic road overlay toggles and 50km / 100km / 200km Guwahati supply radius rings.
+
+
+----------------------------------------------------------------------------------------------------
+3. AI ROUTE OPTIMIZER & RADR ENGINE (`frontend/AI_Route_Optimizer.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Interactive spatio-temporal route planning tool powered by ST-GCN + GRU algorithms, enabling route parameter tuning, multi-criteria optimization, intermodal comparison, altitude cross-sectioning, and ULIP e-Waybill generation.
+
+[Files & Scripts]
+- HTML: `frontend/AI_Route_Optimizer.html`
+- CSS: `frontend/css/AI_Route_Optimizer.css`
+- JS: `frontend/js/AI_Route_Optimizer.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- Route Parameter Configuration Form:
+  * Inputs for Origin Freight Hub, Destination Node, Cargo Priority & Cryo Type, Preferred Transit Mode.
+- Multi-Criteria Optimization Preference Sliders:
+  * Range sliders for Cost Minimization, Transit Speed, Landslide Safety, and Cold-Chain Preservation.
+- Intermodal Route Decision Comparison Matrix:
+  * Route B (Recommended ST-GCN): NW-2 Waterway Barge ➔ Lumding Rail (395 km, 5.4 hrs, Risk 0.12, 1.4 Tons CO₂ saved).
+  * Route A (Disrupted): Direct Highway Trucking (340 km, 8.2 hrs, Risk 0.84 HIGH threat).
+  * Route C (Emergency): Cableway Pod ➔ Cargo Drone (280 km, 3.1 hrs, Risk 0.08).
+- ULIP Digital e-Waybill & FASTag Clearance Generator Modal:
+  * Generates digital QR clearance pass (`ULIP-NE-2026-884920`) with direct driver HUD dispatch.
+- Mountain Topography Altitude 3D Cross-Section:
+  * Visual altitude profile comparing Guwahati (55m), Pandu NW-2 (35m), Shillong Plateau (1,520m), Sonapur Pass Hazard (920m), Lumding Rail (145m), and Silchar Valley (35m).
+- ESG Carbon Footprint & Green Freight Impact Card:
+  * PM Gati Shakti compliant metrics: 1.42 Tons CO₂ Abated, 420 Liters Diesel Conserved, 85.4 Green Freight Credits.
+- Step-by-Step GNN Segment Node Hop Timeline:
+  * Breakdown: Guwahati Park ➔ Pandu Port (18 km) ➔ Lumding River Hub (140 km) ➔ Badarpur Rake (160 km) ➔ Silchar Hospital (37 km).
+- Dynamic Monsoon & Terrain Factor Simulator:
+  * 3 Interactive Range Sliders: Rainfall (0-200 mm/hr), Slope Shear Angle (15°-65°), Visibility (50-2000m) calculating live ST-GCN Risk Scores.
+- Arrhenius PINN Cargo Spoilage SLA Panel:
+  * Real-time temperature (+2.1°C), shelf-life buffer (142 Hours), and quality degradation forecast (0.8%).
+
+
+----------------------------------------------------------------------------------------------------
+4. LIVE FLEET & ULIP 4-GATEWAY PORTAL (`frontend/Live_fleet.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Real-time tracking of active goods fleets across NER, complemented by a live National ULIP API verification portal for VAHAN 4.0, SARATHI, FASTag, and FOIS rail records.
+
+[Files & Scripts]
+- HTML: `frontend/Live_fleet.html`
+- CSS: `frontend/css/Live_fleet.css`
+- JS: `frontend/js/Live_fleet.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- Live Telematics KPI Header Strip:
+  * 1,482 Active Fleets, 42 km/h Avg Speed, 42 RADR Rerouted Vehicles, 98.4% On-Time Delivery Rate.
+- ULIP 4-Gateway Live API Status Cards:
+  * VAHAN 4.0 (Vehicle Registry), SARATHI (Driver Licensing), FASTag Tolls (RFID Stream), FOIS (Rail Freight Rakes).
+- Interactive Fleet Filter Chips & Search Bar:
+  * Filter by `All Fleets`, `Rerouted`, `Cold-Chain Cryo`, `Heavy 6-Axle`, `NW-2 Barges`.
+- Driver Fatigue & Shift Logbook Safety Widget:
+  * Shift limit countdown, engine health status, and tire pressure telemetry.
+- FASTag RFID Live Passage Stream:
+  * Toll passage log stream displaying vehicle passes at Sonapur, Jorabat, and Sevoke plazas.
+- Interactive Driver & Vehicle ULIP Record Inspection Modal (`lookupUlipRecord()`):
+  * Renders full VAHAN, SARATHI, FASTag, and FOIS records for selected vehicle.
+- CSV Telemetry Export Button (`exportFleetCsv()`):
+  * Downloads complete live fleet telematics CSV file.
+
+
+----------------------------------------------------------------------------------------------------
+5. PERISHABLE SUPPLY CHAIN & SPOILAGE (`frontend/supply_chain.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+District accessibility health analysis, disruption bottleneck breakdowns, GI crop inventory tracking, and an interactive Multi-Factor Arrhenius Spoilage PINN Engine for agricultural perishables.
+
+[Files & Scripts]
+- HTML: `frontend/supply_chain.html`
+- CSS: `frontend/css/supply_chain.css`
+- JS: `frontend/js/supply_chain.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- Supply Chain Telemetry KPI Header Strip:
+  * 4,280 MT Perishable Freight, 88.4% Reefer Saturation, ₹42.8L Spoilage Abated / Month, -3.4h Avg Transit Time.
+- High-Value GI Perishable Cargo Inventory Tracker Grid:
+  * Cards for GI Lakadong Turmeric (Meghalaya, 120 MT, Curcumin 7.5%, 142h Buffer), GI Tripura Queen Pineapple (Tripura, 85 MT, Brix 14.2°, 68h Buffer), GI Naga King Chilli (Nagaland, 42 MT, 1M SHU, 180h Buffer), and GI Khasi Mandarin Orange (Meghalaya, 110 MT, 96h Buffer).
+- 8-State Regional Accessibility Index:
+  * Progress meters for Assam (92%), Tripura (88%), Meghalaya (81%), Nagaland (76%), Arunachal (74%), Mizoram (70%), Manipur (68%), Sikkim (65%).
+- Disruption Bottleneck Breakdown:
+  * Landslides (45%), Monsoon Floods (30%), Bridge Degradation (15%), High-altitude Snow/Fog (10%).
+- Multi-Factor Arrhenius Physics PINN Simulator:
+  * Interactive inputs for Commodity Select, Transport Temperature (5°C - 45°C), Relative Humidity (40% - 98%), and Vibration (0.2G - 2.5G).
+  * Dynamic math output calculating Remaining Safe Shelf Life, Kinetic Rate Multiplier k(T,H,v), and recommended storage.
+- Strategic Multi-Modal Cold Storage Hub Advisory:
+  * Cards for Pandu Port River Reefer Hub (500 MT, 14°C), Lumding Rake Cold Storage (1,200 MT, 4°C), and Shillong Solar Agro Hub (350 MT, 12°C).
+  * Emergency Action: "❄️ Dispatch Emergency Reefer Pod" (`dispatchReeferPod()`).
+
+
+----------------------------------------------------------------------------------------------------
+6. MDONER PUBLIC FUND GOVERNANCE LEDGER (`frontend/Public_fund.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Automated, zero-trust public fund governance platform verifying MDoNER infrastructure grants through satellite ViT audits, smart contract milestone escrows, and SHA-256 Merkle proofs.
+
+[Files & Scripts]
+- HTML: `frontend/Public_fund.html`
+- CSS: `frontend/css/Public_fund.css`
+- JS: `frontend/js/Public_fund.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- Public Fund Governance KPI Header Strip:
+  * ₹840.5 Cr Total Sanctioned, ₹612.8 Cr Smart Escrow Disbursed, 100% Merkle SHA-256 Verified, 94.2% Compliance.
+- Smart Contract Milestone Escrow & Satellite ViT Geo-Audit Panel:
+  * Phase 1 Foundation Clearance: Released ₹85 Cr (`Merkle Hash: 0x7f8a92b3...`).
+  * Phase 2 Structural Girder Erection: Released ₹140 Cr (`Merkle Hash: 0x3b1c904e...`).
+  * Phase 3 Final Load & Retainage: Locked ₹45 Cr (`Merkle Hash: 0x9d4e11af...`).
+- 8-State MDoNER Fund Allocation & Physical Progress Analytics Grid:
+  * Visual progress comparison for Assam (₹340 Cr), Meghalaya (₹180 Cr), Arunachal (₹160 Cr), Sikkim & Tripura (₹160.5 Cr).
+- Citizen Geo-Audit & Discrepancy Flagging Modal (`openCitizenAuditModal()`):
+  * Modal allowing citizens & auditors to submit field observation notes and generate instant cryptographic SHA-256 audit receipts (`submitCitizenAudit()`).
+- Dynamic Public Audit Project Ledger:
+  * State filter, Sector filter, text search, CSV export (`exportCsv()`), and detailed project inspection modal (`openProjectDetailModal()`) displaying Merkle proof SHA-256 hashes.
+
+
+----------------------------------------------------------------------------------------------------
+7. ARCHITECTURAL BLUEPRINT & SYSTEM OVERVIEW (`frontend/About_us.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Comprehensive technical architecture showcase for SIH 26002 detailing micro-services, intermodal decision matrices, ML specifications, kinetic formulations, roadmap, and Team ICONIC roster.
+
+[Files & Scripts]
+- HTML: `frontend/About_us.html`
+- CSS: `frontend/css/About_us.css`
+- JS: `frontend/js/About_us.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- SIH 26002 Hero Banner & Technology Badges:
+  * Badges for SIH 26002, Team ICONIC, and 7 tech chips (`ST-GCN`, `ULIP Gateway`, `Bhashini AI`, `Arrhenius PINN`, `Delta-CRDT Sync`, `Geo-Audit AI`, `NW-2 Barges`).
+- 6 Core Platform Micro-Services:
+  * Detailed Cards for ULIP Gateway, ST-GCN Risk Engine, Bhashini Multilingual NLP, Delta-CRDT Offline Sync, Arrhenius PINN Thermal Engine, Satellite Geo-Tagging.
+- Multi-Modal Intermodal Swap Decision Matrix Table:
+  * Swap comparison for Road Trucking, Broad-Gauge Rail Freight, NW-2 Inland Waterways, High-Altitude Cableways, and Cargo Drones.
+- Machine Learning Model Specification Matrix Table:
+  * Benchmarks showing ST-GCN (<12ms, 94.8% F1), Arrhenius PINN (<8ms, 98.2% Acc), Bhashini ASR (<120ms, 92.4% Acc), Satellite ViT (<450ms, 96.1% Prec), Dynamic Router (<45ms, 99.1% Opt).
+- Arrhenius Physics Kinetic Rate Formulation Card:
+  * Formatted equation k(T,H,v) with parameter breakdowns and economic ROI.
+- 12-Month Production Deployment Roadmap:
+  * Phase 1 (Sonapur Corridor Q1-Q2 2026), Phase 2 (State-Wide Scale Q3-Q4 2026), Phase 3 (Full NE & BIMSTEC Trade Q1-Q2 2027).
+- Team ICONIC Official SIH 2026 Roster (Team ID 119301, Usha Martin University):
+  1. Jeet Raj (Team Leader & Lead Systems Architect)
+  2. Roshan Kumar Sahu (Lead GNN & Full-Stack AI Engineer)
+  3. Satyam Kumar (Geospatial & ULIP Gateway Lead)
+  4. Ankit Kujur (Edge Compute & Delta-CRDT Engineer)
+  5. Samir Sarar (Multilingual Bhashini Voice AI Specialist)
+  6. Aastha Jaiswal (UI/UX & Public Audit Governance Specialist).
+
+
+----------------------------------------------------------------------------------------------------
+8. RESOURCES & OPEN DATA HUB (`frontend/resource.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Public open data portal providing downloadable GIS datasets, OpenAPI documentation, field operating manuals, an interactive developer API playground sandbox, and an 8-state emergency directory.
+
+[Files & Scripts]
+- HTML: `frontend/resource.html`
+- CSS: `frontend/css/resource.css`
+- JS: `frontend/js/resource.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- OGD & PM Gati Shakti Data Compliance Header Banner:
+  * Open Government Data (OGD) License India, PM Gati Shakti Interoperability, and NDAP compatibility badges.
+- Filterable Open Datasets Catalog Grid:
+  * Category chips (`All Resources`, `GIS GeoJSON`, `OpenAPI Specs`, `CSV Logs`, `Field Manuals`) filtering 6 download cards (NER Road Disruption, GNN OpenAPI 3.0, Field Mobile Guide, NW-2 Hydrographic Charts, Reefer Thermal Telemetry Logs, MDoNER Merkle Hashes).
+- Interactive Developer API Endpoint Playground Sandbox:
+  * Live endpoint selector (`GET /api/v1/routes/stgcn-risk`, `GET /api/v1/ulip/vahan-record`, `GET /api/v1/crdt/mesh-state`), live JSON response preview (`loadApiPlaygroundPreview()`), execute query button (`executeApiPlaygroundCall()`), and copy cURL button (`copyCurlCommand()`).
+- 8-State Emergency Directory Search Filter (`filterEmergencyDirectory()`):
+  * Real-time search box filtering the 8-state control rooms and hospital emergency table.
+
+
+----------------------------------------------------------------------------------------------------
+9. EMERGENCY HELPLINES & SOS DISPATCH (`frontend/SOS.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Emergency panic response hub providing one-touch emergency GPS dispatch, priority hotlines quick-dial grid, 8-state disaster control room cards, and offline satellite/mesh relay testing.
+
+[Files & Scripts]
+- HTML: `frontend/SOS.html`
+- CSS: `frontend/css/SOS.css`
+- JS: `frontend/js/SOS.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- One-Touch Emergency SOS Panic Hero Card:
+  * Pulsing red panic button (`🚨 DISPATCH EMERGENCY SOS (PANIC)`) broadcasting live precision GPS fix (25.1384° N, 92.3681° E · Elev 920m at Sonapur Pass) to BRO Mountain Rescue & SDMA Command.
+- 24x7 Priority Emergency Hotlines Quick-Dial Grid:
+  * Speed-dial cards for BRO Landslide Command (1800-180-2026), National Highway Emergency (1033), Health & Oxygen Helpline (108/104), SDMA Disaster Control (1070).
+- 8-State Disaster Control Rooms Grid:
+  * Individual cards for Assam, Meghalaya, Arunachal Pradesh, Manipur, Mizoram, Nagaland, Sikkim, and Tripura with local numbers and direct SOS dispatch buttons (`triggerSosDispatch()`).
+- Offline Mesh Satellite & P2P Bluetooth Broadcast Tester (`testOfflineMeshSos()`):
+  * Action button testing offline emergency packet relay across peer officer nodes.
+
+
+----------------------------------------------------------------------------------------------------
+10. OFFICER COMMAND & AUDIT PROFILE HUB (`frontend/Profile.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Field officer security credentials card, designation clearance management, performance KPI stats grid, quick action toolbar, and recent cryptographic audit activity timeline.
+
+[Files & Scripts]
+- HTML: `frontend/Profile.html`
+- CSS: `frontend/css/Profile.css`
+- JS: `frontend/js/Profile.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- Officer Security Credentials Badge Card:
+  * Avatar badge initials `RS`, name **Officer Roshan Sahu**, designation **Senior Logistics Monitor & Public Auditor**, zone **North Eastern Region (MDoNER)**, `🛡️ Level 4 Executive Clearance` badge, `⚡ CRDT Node: CRDT-OFFICER-8849`, auth token `SHA256-NER-2026-X89`, status `🟢 Mesh Online (12ms)`.
+- Officer Performance KPI Stats Grid:
+  * 18 Incidents Reported, 42 Public Audits Verified, 8 NER States Monitored, 99.4% Security Trust Score.
+- Field Officer Quick Action Toolbar:
+  * `📝 Report Field Incident` (opens incident modal).
+  * `🔄 Sync Delta-CRDT Mesh` (`syncCrdtMesh()`): Triggers manual P2P mesh sync with state nodes.
+  * `📥 Export Audit Log (CSV)` (`downloadOfficerAuditLog()`): Downloads cryptographic officer audit log CSV.
+- Recent Activity & Security Audit Timeline:
+  * Realtime feed showing verified public fund disbursements, monsoon hazard alerts, CRDT syncs, and ULIP cold-chain inspection approvals.
+- Submitted Incident Reports List:
+  * Dynamic rendering of officer incident submissions via `script.js` (`#incidents-list-container`).
+
+
+----------------------------------------------------------------------------------------------------
+11. PLATFORM PREFERENCES & CONTROL CENTER (`frontend/Setting.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+System configuration center for appearance themes, 10-language translations, Bhashini voice engine preferences, Delta-CRDT storage controls, and RADR push notifications.
+
+[Files & Scripts]
+- HTML: `frontend/Setting.html`
+- CSS: `frontend/css/Setting.css`
+- JS: `frontend/js/Setting.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- System Health Telemetry Banner:
+  * Health cards: SIH 26002 v2.4 Build, ST-GCN v3.2 AI Engine, IndexedDB Cache 2.4 MB / 50 MB, 12ms Mesh Ping.
+- Appearance & Regional Multilingual System:
+  * Theme Mode Toggle (`toggleTheme()`): Switches between Light & Dark mode.
+  * Regional Language Selector (`changeLanguage()`): 10-Language UI translator (EN, HI, AS, MNI, BN, LUS, BRX, TRB, NAG, UJN).
+  * Telematics Polling Frequency Selector (4s, 10s, 30s).
+- Bhashini AI Voice Engine Preferences:
+  * Switches for TTS Speech Output, ASR Auto-Language Detection, and Speech Rate (1.0x, 1.25x, 1.5x).
+- Delta-CRDT Mesh & Data Storage Manager:
+  * Switches for Offline Storage Persistence, P2P Bluetooth/Wi-Fi Direct Mesh Broadcast, and Clear Cache & Re-Sync button (`resetPlatformSettings()`).
+- RADR Alerts & Push Notification Preferences:
+  * Switches for Landslide & Flood Alerts, Reefer Temperature Anomaly Alerts, MDoNER Public Audit Receipts.
+
+
+----------------------------------------------------------------------------------------------------
+12. GEOTAGGED FIELD INCIDENT & DELTA-CRDT HUB (`frontend/Report_field_incident.html`)
+----------------------------------------------------------------------------------------------------
+[Purpose]
+Offline-first geotagged field incident report hub enabling field officers to log hazard reports, auto-fetch GPS coordinates, select rescue dispatch taskforces, and preview AI vision hazard classifications.
+
+[Files & Scripts]
+- HTML: `frontend/Report_field_incident.html`
+- CSS: `frontend/css/Report_field_incident.css`
+- JS: `frontend/js/Report_field_incident.js` & `frontend/js/script.js`
+
+[Key Features & Interactive Controls]
+- Delta-CRDT Mesh Telemetry Strip:
+  * Telemetry cards: `🟢 Mesh Sync 12ms`, `12 Active Peer Nodes`, `0 Pending Offline Queue`, `⚡ Force Peer Sync` button (`forceCrdtPeerSync()`).
+- High-Precision GPS Geolocation Auto-Fetch Widget:
+  * `📍 Auto-Fetch GPS` button (`fetchGpsLocation()`) updating Lat/Long `25.1384° N, 92.3681° E` and Elevation `920m` (Sonapur Pass).
+- Priority Rescue Unit Dispatch Selector:
+  * Taskforce options: BRO Mountain Rescue Squad, NDMA Disaster Relief, Assam/Meghalaya Highway Patrol, ULIP Reefer Cargo Escort.
+- ISRO Vision Transformer (ViT) Image Hazard Classifier Simulator:
+  * Photo upload preview card displaying 92% Mudslide Confidence, ~420 Tonnes Debris, and automated ST-GCN RADR bypass advisory.
+- Submitted Field Incidents Log:
+  * Real-time list rendering submitted field incident reports with geotagged photo previews.
+
+
+====================================================================================================
+SHARED JS & CSS SYSTEM ARCHITECTURE SUMMARY
+====================================================================================================
+
+1. `frontend/css/style.css` (~270 lines):
+   - Shared CSS custom design tokens (`var(--bg-card)`, `var(--border-color)`, `var(--accent-forest)`, `var(--accent-emerald)`, `var(--accent-rose)`, `var(--accent-sky)`).
+   - Global typography (Inter, JetBrains Mono, Playfair Display), responsive layout wrappers, buttons, badges, navigation headers, glassmorphism cards, and modal overlay animations.
+
+2. `frontend/js/script.js` (~210 lines):
+   - Shared datasets (`NER_STATES`, `projects`, `disruptions`, `fleet`, `incidentReports`).
+   - Global state variables & telematics GPS loop.
+   - Theme mode toggle (`toggleTheme()`), Bhashini voice widget drawer (`toggleVoiceWidget()`), live toast notification trigger (`showToast()`), 3-dot dropdown menu handler (`toggleThreeDotsMenu()`), Driver View HUD modal controls, and Emergency Landslide Simulation trigger (`toggleLandslideSimulation()`).
+
+====================================================================================================
+END OF DOCUMENTATION
+====================================================================================================

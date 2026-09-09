@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NE-AURA: Executive Dashboard · SIH 26002</title>
+  <meta name="description" content="Autonomous Multi-Modal Logistics & Public Fund Governance for North Eastern Region of India.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+
+  <!-- Top Navigation & Action Bar -->
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand-title">
+        <div class="brand-logo">NE</div>
+        <div class="brand-text">
+          <h1 class="serif-font">NE-AURA <span class="badge badge-success">SIH 26002</span></h1>
+          <p>Smart India Hackathon 2026 · North Eastern Region Logistics & Public Audit</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="Report_field_incident.html" class="btn btn-outline btn-sm">📝 Report Incident</a>
+        <button class="btn btn-secondary btn-sm" onclick="openDriverModal()">🚗 Driver View</button>
+        <button class="btn btn-danger btn-sm" onclick="toggleLandslideSimulation()">🚨 Trigger Landslide</button>
+
+        <div class="three-dots-container">
+          <button class="three-dots-btn" id="three-dots-btn" onclick="toggleThreeDotsMenu(event)" title="More Options">⋮</button>
+          <div class="three-dots-dropdown" id="three-dots-dropdown">
+            <div class="dropdown-header">More Pages & Services</div>
+            <a href="About_us.html" class="dropdown-item">ℹ️ About Us & Services</a>
+            <a href="resource.html" class="dropdown-item">📑 Resources & Open Data</a>
+            <a href="SOS.html" class="dropdown-item">📞 SOS</a>
+            <a href="Profile.html" class="dropdown-item">👤 Profile</a>
+            <a href="Setting.html" class="dropdown-item">⚙️ Setting</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-scroll-wrapper">
+      <div class="tabs-container">
+        <a href="index.html" class="tab-btn active">📊 Executive Dashboard</a>
+        <a href="Gis_map.html" class="tab-btn">🗺️ GIS Map</a>
+        <a href="AI_Route_Optimizer.html" class="tab-btn">🧠 AI Route Optimizer</a>
+        <a href="Live_fleet.html" class="tab-btn">🚛 Live Fleet & ULIP</a>
+        <a href="supply_chain.html" class="tab-btn">🌾 Supply Chain & Spoilage</a>
+        <a href="Public_fund.html" class="tab-btn">🏛️ Public Fund Governance</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="main-wrapper">
+    <section class="tab-pane active">
+
+      <!-- Live Telemetry Status Ticker Banner -->
+      <div class="status-ticker-banner">
+        <div class="ticker-text">
+          <span class="badge badge-success">🟢 SYSTEM OPERATIONAL</span>
+          <span><strong>ISRO SAR Radar:</strong> NH-27 Sonapur Slope Failure (420m) · <strong>NW-2 Waterway:</strong> Normal · <strong>1,482 Fleets Active</strong></span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; shrink: 0;">
+          <button class="btn btn-outline btn-sm" onclick="exportPdf()">📄 Export PDF Audit</button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Grid -->
+      <div class="grid-4" style="margin-bottom: 1.25rem;">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #e0f2fe; color: #0284c7;">📈</div>
+          <div>
+            <div class="kpi-value">91.4%</div>
+            <div class="kpi-label">NER Accessibility Index</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #fee2e2; color: #e11d48;">🚨</div>
+          <div>
+            <div class="kpi-value">3 Active</div>
+            <div class="kpi-label">Corridor Disruptions</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #dcfce7; color: #16a34a;">🚚</div>
+          <div>
+            <div class="kpi-value">1,482 Units</div>
+            <div class="kpi-label">Live GPS Fleets</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: #fef3c7; color: #d97706;">⚡</div>
+          <div>
+            <div class="kpi-value">94.8%</div>
+            <div class="kpi-label">Disaster Readiness</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Regional Corridor Health Progress Meters -->
+      <div class="glass-card" style="margin-bottom: 1.5rem; padding: 0.85rem 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <strong style="font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;">Regional Corridor Health Meters</strong>
+          <span style="font-size: 0.75rem; color: var(--accent-forest); font-weight: 700;">8 States Monitored</span>
+        </div>
+        <div class="corridor-health-bar">
+          <div class="corridor-item">
+            <div class="corridor-title"><span>Assam Belt</span> <span style="color: var(--accent-emerald);">92%</span></div>
+            <div class="mini-progress-bg"><div class="mini-progress-fill" style="width: 92%; background: var(--accent-emerald);"></div></div>
+          </div>
+          <div class="corridor-item">
+            <div class="corridor-title"><span>Meghalaya Pass</span> <span style="color: var(--accent-amber);">81%</span></div>
+            <div class="mini-progress-bg"><div class="mini-progress-fill" style="width: 81%; background: var(--accent-amber);"></div></div>
+          </div>
+          <div class="corridor-item">
+            <div class="corridor-title"><span>Arunachal Axis</span> <span style="color: var(--accent-sky);">74%</span></div>
+            <div class="mini-progress-bg"><div class="mini-progress-fill" style="width: 74%; background: var(--accent-sky);"></div></div>
+          </div>
+          <div class="corridor-item">
+            <div class="corridor-title"><span>Manipur Corridor</span> <span style="color: var(--accent-terracotta);">68%</span></div>
+            <div class="mini-progress-bg"><div class="mini-progress-fill" style="width: 68%; background: var(--accent-terracotta);"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency Multi-Modal Swap Engine Banner -->
+      <div id="multiModalSwapBanner" style="display: none; margin-bottom: 1.5rem;"></div>
+
+      <!-- Main Dashboard Grid -->
+      <div class="grid-2">
+        <!-- Left: Real-Time GIS Road Overview Map -->
+        <div class="glass-card">
+          <div class="card-header-title">
+            <h3>🗺️ GIS Road Accessibility Overview</h3>
+            <a href="Gis_map.html" class="btn btn-outline btn-sm">Full GIS View →</a>
+          </div>
+          <div id="gis-map-canvas" class="map-canvas" style="height: 380px;"></div>
+        </div>
+
+        <!-- Right: Alert Feed & Multi-Modal Bypass RADR -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <div class="glass-card">
+            <div class="card-header-title">
+              <h3>🚨 Active Landslide & Disruption Alerts</h3>
+              <span class="badge badge-danger">Live Telemetry</span>
+            </div>
+            <div>
+              <div style="border-left: 4px solid var(--accent-terracotta); padding-left: 0.75rem; margin-bottom: 1rem;">
+                <h4 style="font-size: 0.9rem; font-weight: 700;">NH-27 Sonapur Tunnel Pass Landslide</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">East Jaintia Hills, Meghalaya · 420m slope failure triggered</p>
+                <div style="margin-top: 0.4rem;">
+                  <span class="badge badge-danger">Critical</span>
+                  <span class="badge badge-neutral">ST-GCN Risk: 0.89</span>
+                </div>
+              </div>
+              <div style="border-left: 4px solid var(--accent-amber); padding-left: 0.75rem;">
+                <h4 style="font-size: 0.9rem; font-weight: 700;">NH-37 Kaziranga Belt Inundation</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Golaghat, Assam · Brahmaputra water overflow</p>
+                <div style="margin-top: 0.4rem;">
+                  <span class="badge badge-warning">Warning</span>
+                  <span class="badge badge-neutral">ST-GCN Risk: 0.82</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card">
+            <div class="card-header-title">
+              <h3>🔀 Multi-Modal Bypass RADR</h3>
+              <span class="badge badge-info">ST-GCN Active</span>
+            </div>
+            <p style="font-size: 0.85rem; margin-bottom: 1rem;">
+              When mountain corridors like NH-27 face landslides, NE-AURA automatically calculates river barge (NW-2 Brahmaputra), rail freight (FOIS), and high-altitude bypass routes.
+            </p>
+            <div style="background: var(--bg-card-subtle); padding: 1rem; border-radius: var(--radius-md); font-size: 0.8rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span><strong>Primary Route:</strong> NH-27 Sonapur</span>
+                <span style="color: var(--accent-terracotta); font-weight: 700;">BLOCKED</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span><strong>AI Bypass:</strong> NW-2 Barge -> Silchar Rail</span>
+                <span style="color: var(--accent-emerald); font-weight: 700;">+2.4 hrs (89% Risk Drop)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Critical Cargo Tracking Ticker Card -->
+      <div class="critical-cargo-card">
+        <div class="card-header-title">
+          <h3>📦 High-Priority Critical Cargo Shipments</h3>
+          <a href="Live_fleet.html" class="btn btn-outline btn-sm">All Fleets & ULIP →</a>
+        </div>
+        <div class="cargo-ticker-grid">
+          <div class="cargo-item-box">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                <span class="mono-font" style="font-size: 0.75rem; font-weight: 700;">AS-01-HC-9920</span>
+                <span class="badge badge-info">Rerouted by AI</span>
+              </div>
+              <h4 style="font-size: 0.88rem; font-weight: 700;">Essential Cryo Vaccines</h4>
+              <p style="font-size: 0.76rem; color: var(--text-muted);">Guwahati Hub ➔ Silchar Medical College</p>
+            </div>
+            <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-emerald);">ETA 5.4 Hours</span>
+              <a href="Live_fleet.html" class="btn btn-outline btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Verify ULIP</a>
+            </div>
+          </div>
+
+          <div class="cargo-item-box">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                <span class="mono-font" style="font-size: 0.75rem; font-weight: 700;">MN-01-C-8877</span>
+                <span class="badge badge-success">In Transit</span>
+              </div>
+              <h4 style="font-size: 0.88rem; font-weight: 700;">Medical Oxygen Cylinders</h4>
+              <p style="font-size: 0.76rem; color: var(--text-muted);">Tezpur Base ➔ JNIMS Hospital Imphal</p>
+            </div>
+            <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-emerald);">ETA 6.8 Hours</span>
+              <a href="Live_fleet.html" class="btn btn-outline btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Verify ULIP</a>
+            </div>
+          </div>
+
+          <div class="cargo-item-box">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                <span class="mono-font" style="font-size: 0.75rem; font-weight: 700;">TR-01-AX-4500</span>
+                <span class="badge badge-success">In Transit</span>
+              </div>
+              <h4 style="font-size: 0.88rem; font-weight: 700;">PDS Food Grains & Rice</h4>
+              <p style="font-size: 0.76rem; color: var(--text-muted);">FCI Jogighopa ➔ Agartala Central Godown</p>
+            </div>
+            <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-emerald);">ETA 7.5 Hours</span>
+              <a href="Live_fleet.html" class="btn btn-outline btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Verify ULIP</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Climate Change & Environmental Resilience Radar Panel -->
+      <div class="climate-radar-card">
+        <div class="card-header-title">
+          <h3>🌡️ Climate Change & Environmental Resilience Radar</h3>
+          <span class="badge badge-info">ISRO & CWC Live Feed</span>
+        </div>
+
+        <div class="climate-metrics-grid">
+          <div class="climate-metric-box">
+            <div class="climate-metric-title">
+              <span>Monsoon Rainfall Anomaly</span>
+              <span class="badge badge-warning">High Risk</span>
+            </div>
+            <div class="climate-metric-value" style="color: var(--accent-amber);">+34%</div>
+            <div class="climate-metric-desc">IMD Extreme Flash Flood Alert in East Jaintia Hills & Cachar</div>
+          </div>
+
+          <div class="climate-metric-box">
+            <div class="climate-metric-title">
+              <span>Glacial Outburst (GLOF) Index</span>
+              <span class="badge badge-neutral">0.64 Moderate</span>
+            </div>
+            <div class="climate-metric-value" style="color: var(--accent-sky);">0.64</div>
+            <div class="climate-metric-desc">Sikkim Teesta Basin Early Warning Satellite Towers Active</div>
+          </div>
+
+          <div class="climate-metric-box">
+            <div class="climate-metric-title">
+              <span>CO₂ Emissions Abated</span>
+              <span class="badge badge-success">Intermodal Saved</span>
+            </div>
+            <div class="climate-metric-value" style="color: var(--accent-emerald);">42.8 Tons</div>
+            <div class="climate-metric-desc">Saved by switching to NW-2 River Barges & Broad Gauge FOIS Rail</div>
+          </div>
+
+          <div class="climate-metric-box">
+            <div class="climate-metric-title">
+              <span>Climate Resilience Score</span>
+              <span class="badge badge-success">78.2 / 100</span>
+            </div>
+            <div class="climate-metric-value" style="color: var(--accent-forest);">78.2</div>
+            <div class="climate-metric-desc">High adaptability & safe detour readiness across 8 NER States</div>
+          </div>
+        </div>
+
+        <div class="climate-alert-strip">
+          <span style="font-size: 1.2rem;">🌩️</span>
+          <div>
+            <strong>Climate Change Threat Alert:</strong> Cloudburst warning in Subansiri River Basin. 72-Hour AI Precipitation Projection: <strong>185mm</strong>. Automated ST-GCN RADR rerouting active.
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Modals & Widgets -->
+  <div id="driver-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>🚗 Driver Focus View HUD</h3>
+        <button class="modal-close-btn" onclick="closeDriverModal()">&times;</button>
+      </div>
+      <div style="background: #121a12; color: #7bc96e; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a3b19b;">Active Highway Navigation</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0;">NH-27 Sonapur Bypass</div>
+        <div style="font-size: 1.1rem; color: #fff; font-weight: 700;">In 1.4 km: Turn Right for NW-2 River Barge Terminal</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="incident-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📝 Report Field Incident (Delta-CRDT Offline Sync)</h3>
+        <button class="modal-close-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <form onsubmit="submitIncidentReport(event)">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inc-category" class="form-select">
+            <option value="Landslide">Landslide / Mudslide</option>
+            <option value="Monsoon Flood">Monsoon Flash Flood</option>
+            <option value="Bridge Degradation">Bridge Shear Defect</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Highway / Corridor</label>
+          <input type="text" id="inc-highway" class="form-control" value="NH-27 Sonapur Pass" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Field Notes</label>
+          <textarea id="inc-notes" class="form-control" rows="3" required>Slope failure observed at KM 141. BRO equipment required.</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Attach Field Photo</label>
+          <input type="file" id="modal-photo-input" accept="image/*" style="display: none;" onchange="handlePhotoSelect(event, 'modal-photo-preview', 'modal-photo-preview-box')">
+          <div class="incident-file-dropzone" onclick="triggerPhotoUpload('modal-photo-input')">
+            <div style="font-size: 0.85rem; font-weight: 700;">📷 Click to Add Picture / Attach Photo</div>
+            <div id="modal-photo-preview-box" style="display: none; margin-top: 0.5rem;">
+              <img id="modal-photo-preview" style="max-height: 120px; border-radius: var(--radius-md); border: 1px solid var(--border-color); display: none; margin: 0 auto 0.4rem;" alt="Preview">
+              <span class="badge badge-success">Photo Attached & GPS Geotagged</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;">Submit Field Report</button>
+      </form>
+    </div>
+  </div>
+
+  <button class="voice-widget-btn" onclick="toggleVoiceWidget()" title="Bhashini Voice Assistant">🗣️</button>
+  <div id="voice-assistant-panel" class="voice-assistant-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <strong style="font-size: 0.9rem; color: var(--accent-forest);">🗣️ Bhashini Voice Assistant</strong>
+      <span class="badge badge-info">10 Languages</span>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Speak or type queries in English, Hindi, Assamese, Manipuri, Mizo, Bengali, etc.</p>
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Ask: 'Show active landslides'..." onkeydown="if(event.key==='Enter'){ showToast('Bhashini Query: Finding active landslides...'); toggleVoiceWidget(); }">
+    </div>
+  </div>
+
+  <div id="live-toast" class="live-toast" style="display: none;">
+    <div class="toast-ping"></div>
+    <div style="font-size: 0.8rem;">
+      <strong style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-forest);">Live Alert</strong>
+      <span id="toast-msg">Notification message</span>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong style="color: var(--text-primary);" class="serif-font">NE-AURA · Smart India Hackathon 2026 (SIH 26002)</strong>
+        <p style="font-size: 0.75rem;">Autonomous Multi-Modal Logistics & Public Fund Governance Platform</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/script.js"></script>
+  <script src="./js/index.js"></script>
+</body>
+</html>

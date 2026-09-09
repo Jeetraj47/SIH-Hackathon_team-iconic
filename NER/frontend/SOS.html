@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NE-AURA: Emergency Helplines · SIH 26002</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/SOS.css">
+</head>
+<body>
+
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand-title">
+        <div class="brand-logo">NE</div>
+        <div class="brand-text">
+          <h1 class="serif-font">NE-AURA <span class="badge badge-success">SIH 26002</span></h1>
+          <p>Smart India Hackathon 2026 · North Eastern Region Logistics & Public Audit</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="Report_field_incident.html" class="btn btn-outline btn-sm">📝 Report Incident</a>
+        <button class="btn btn-secondary btn-sm" onclick="openDriverModal()">🚗 Driver View</button>
+        <button class="btn btn-danger btn-sm" onclick="toggleLandslideSimulation()">🚨 Trigger Landslide</button>
+
+        <div class="three-dots-container">
+          <button class="three-dots-btn" id="three-dots-btn" onclick="toggleThreeDotsMenu(event)" title="More Options">⋮</button>
+          <div class="three-dots-dropdown" id="three-dots-dropdown">
+            <div class="dropdown-header">More Pages & Services</div>
+            <a href="About_us.html" class="dropdown-item">ℹ️ About Us & Services</a>
+            <a href="resource.html" class="dropdown-item">📑 Resources & Open Data</a>
+            <a href="SOS.html" class="dropdown-item">📞 SOS</a>
+            <a href="Profile.html" class="dropdown-item">👤 Profile</a>
+            <a href="Setting.html" class="dropdown-item">⚙️ Setting</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-scroll-wrapper">
+      <div class="tabs-container">
+        <a href="index.html" class="tab-btn">📊 Executive Dashboard</a>
+        <a href="Gis_map.html" class="tab-btn">🗺️ GIS Map</a>
+        <a href="AI_Route_Optimizer.html" class="tab-btn">🧠 AI Route Optimizer</a>
+        <a href="Live_fleet.html" class="tab-btn">🚛 Live Fleet & ULIP</a>
+        <a href="supply_chain.html" class="tab-btn">🌾 Supply Chain & Spoilage</a>
+        <a href="Public_fund.html" class="tab-btn">🏛️ Public Fund Governance</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <section class="tab-pane active">
+      <!-- One-Touch Emergency SOS Panic Hero Card -->
+      <div class="sos-hero-card">
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--accent-rose, #e11d48); margin-bottom: 0.35rem;">
+          🚨 ONE-TOUCH EMERGENCY SOS PANIC DISPATCH
+        </h2>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Broadcast live GPS location, elevation, and vehicle telemetry over Delta-CRDT offline mesh network to BRO Mountain Rescue & State Disaster Command.
+        </p>
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+          📍 <strong>GPS Fix:</strong> <code style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">25.1384° N, 92.3681° E · Elev 920m (NH-27 Sonapur Pass)</code>
+        </div>
+        
+        <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="sos-pulse-btn" onclick="triggerSosDispatch('BRO Mountain Rescue & SDMA Command', '1800-180-2026')">
+            🚨 DISPATCH EMERGENCY SOS (PANIC)
+          </button>
+          <button class="btn btn-outline btn-sm" style="margin-top: 0.75rem;" onclick="testOfflineMeshSos()">
+            📡 Test Offline Mesh Satellite SOS Relay
+          </button>
+        </div>
+      </div>
+
+      <!-- 24x7 Priority Emergency Hotlines -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title">
+          <h3>📞 24x7 Priority Emergency Hotlines (Speed-Dial)</h3>
+        </div>
+        <div class="hotline-grid">
+          <div class="hotline-card">
+            <strong style="font-size: 0.9rem; color: var(--text-primary);">🏗️ BRO Landslide Command</strong>
+            <div class="hotline-num">1800-180-2026</div>
+            <button class="btn btn-danger btn-sm" style="width: 100%;" onclick="triggerSosDispatch('BRO Landslide Command', '1800-180-2026')">Call Command Center 📞</button>
+          </div>
+
+          <div class="hotline-card">
+            <strong style="font-size: 0.9rem; color: var(--text-primary);">🛣️ National Highway Emergency</strong>
+            <div class="hotline-num">1033</div>
+            <button class="btn btn-danger btn-sm" style="width: 100%;" onclick="triggerSosDispatch('NHAI Highway Patrol', '1033')">Call Highway Patrol 📞</button>
+          </div>
+
+          <div class="hotline-card">
+            <strong style="font-size: 0.9rem; color: var(--text-primary);">🏥 Health & Oxygen Helpline</strong>
+            <div class="hotline-num">108 / 104</div>
+            <button class="btn btn-danger btn-sm" style="width: 100%;" onclick="triggerSosDispatch('National Health & Oxygen Emergency', '108')">Call Health Helpline 📞</button>
+          </div>
+
+          <div class="hotline-card">
+            <strong style="font-size: 0.9rem; color: var(--text-primary);">🌊 State Disaster Control (SDMA)</strong>
+            <div class="hotline-num">1070</div>
+            <button class="btn btn-danger btn-sm" style="width: 100%;" onclick="triggerSosDispatch('SDMA Disaster Control', '1070')">Call SDMA Control 📞</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8-State Disaster Control Rooms Grid -->
+      <div class="glass-card">
+        <div class="card-header-title">
+          <h3>🏛️ 8 North Eastern State Emergency Command Centers</h3>
+        </div>
+        <div class="state-sos-grid">
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Assam Command</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Disaster Control: 1070 / 0361-2237011<br>Highway Patrol: 1033 (NH-27 / NH-37)</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Assam SDMA Command', '0361-2237011')">Dispatch Assam SOS 🚨</button>
+          </div>
+
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Meghalaya Command</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Control Room: 0364-2222200<br>Shillong Pass Emergency: 1033</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Meghalaya SDMA Command', '0364-2222200')">Dispatch Meghalaya SOS 🚨</button>
+          </div>
+
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Arunachal Pradesh</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Control Room: 0360-2291116<br>Trans-Arunachal Patrol: 1033</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Arunachal SDMA Command', '0360-2291116')">Dispatch Arunachal SOS 🚨</button>
+          </div>
+
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Manipur Command</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Control Room: 0385-2443441<br>Imphal-Dimapur NH-2: 1033</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Manipur SDMA Command', '0385-2443441')">Dispatch Manipur SOS 🚨</button>
+          </div>
+
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Mizoram Command</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Control Room: 0389-2342520<br>Aizawl Corridor Patrol: 1033</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Mizoram SDMA Command', '0389-2342520')">Dispatch Mizoram SOS 🚨</button>
+          </div>
+
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Nagaland Command</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Control Room: 0370-2270050<br>Dimapur-Kohima Pass: 1033</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Nagaland SDMA Command', '0370-2270050')">Dispatch Nagaland SOS 🚨</button>
+          </div>
+
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Sikkim Command</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Control Room: 03592-202664<br>NH-10 Sevoke Patrol: 1033</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Sikkim SDMA Command', '03592-202664')">Dispatch Sikkim SOS 🚨</button>
+          </div>
+
+          <div class="state-sos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="font-size: 0.95rem; color: var(--accent-rose, #e11d48);">Tripura Command</strong>
+              <span class="badge badge-success">24x7 Active</span>
+            </div>
+            <p style="margin: 0 0 0.5rem; color: var(--text-muted);">Control Room: 0381-2416045<br>NH-8 Agartala Corridor: 1033</p>
+            <button class="btn btn-outline btn-sm" style="width: 100%;" onclick="triggerSosDispatch('Tripura SDMA Command', '0381-2416045')">Dispatch Tripura SOS 🚨</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="driver-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>🚗 Driver Focus View HUD</h3>
+        <button class="modal-close-btn" onclick="closeDriverModal()">&times;</button>
+      </div>
+      <div style="background: #121a12; color: #7bc96e; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a3b19b;">Active Highway Navigation</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0;">NH-27 Sonapur Bypass</div>
+        <div style="font-size: 1.1rem; color: #fff; font-weight: 700;">In 1.4 km: Turn Right for NW-2 River Barge Terminal</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="incident-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📝 Report Field Incident (Delta-CRDT Offline Sync)</h3>
+        <button class="modal-close-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <form onsubmit="submitIncidentReport(event)">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inc-category" class="form-select">
+            <option value="Landslide">Landslide / Mudslide</option>
+            <option value="Monsoon Flood">Monsoon Flash Flood</option>
+            <option value="Bridge Degradation">Bridge Shear Defect</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Highway / Corridor</label>
+          <input type="text" id="inc-highway" class="form-control" value="NH-27 Sonapur Pass" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Field Notes</label>
+          <textarea id="inc-notes" class="form-control" rows="3" required>Slope failure observed at KM 141. BRO equipment required.</textarea>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;">Submit Field Report</button>
+      </form>
+    </div>
+  </div>
+
+  <button class="voice-widget-btn" onclick="toggleVoiceWidget()" title="Bhashini Voice Assistant">🗣️</button>
+  <div id="voice-assistant-panel" class="voice-assistant-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <strong style="font-size: 0.9rem; color: var(--accent-forest);">🗣️ Bhashini Voice Assistant</strong>
+      <span class="badge badge-info">10 Languages</span>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Speak or type queries in English, Hindi, Assamese, Manipuri, Mizo, Bengali, etc.</p>
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Ask: 'Show active landslides'..." onkeydown="if(event.key==='Enter'){ showToast('Bhashini Query: Finding active landslides...'); toggleVoiceWidget(); }">
+    </div>
+  </div>
+
+  <div id="live-toast" class="live-toast" style="display: none;">
+    <div class="toast-ping"></div>
+    <div style="font-size: 0.8rem;">
+      <strong style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-forest);">Live Alert</strong>
+      <span id="toast-msg">Notification message</span>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong style="color: var(--text-primary);" class="serif-font">NE-AURA · Smart India Hackathon 2026 (SIH 26002)</strong>
+        <p style="font-size: 0.75rem;">Autonomous Multi-Modal Logistics & Public Fund Governance Platform</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/script.js"></script>
+  <script src="./js/SOS.js"></script>
+</body>
+</html>

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NE-AURA: About Us · SIH 26002</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/About_us.css">
+</head>
+<body>
+
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand-title">
+        <div class="brand-logo">NE</div>
+        <div class="brand-text">
+          <h1 class="serif-font">NE-AURA <span class="badge badge-success">SIH 26002</span></h1>
+          <p>Smart India Hackathon 2026 · North Eastern Region Logistics & Public Audit</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="Report_field_incident.html" class="btn btn-outline btn-sm">📝 Report Incident</a>
+        <button class="btn btn-secondary btn-sm" onclick="openDriverModal()">🚗 Driver View</button>
+        <button class="btn btn-danger btn-sm" onclick="toggleLandslideSimulation()">🚨 Trigger Landslide</button>
+
+        <div class="three-dots-container">
+          <button class="three-dots-btn" id="three-dots-btn" onclick="toggleThreeDotsMenu(event)" title="More Options">⋮</button>
+          <div class="three-dots-dropdown" id="three-dots-dropdown">
+            <div class="dropdown-header">More Pages & Services</div>
+            <a href="About_us.html" class="dropdown-item">ℹ️ About Us & Services</a>
+            <a href="resource.html" class="dropdown-item">📑 Resources & Open Data</a>
+            <a href="SOS.html" class="dropdown-item">📞 SOS</a>
+            <a href="Profile.html" class="dropdown-item">👤 Profile</a>
+            <a href="Setting.html" class="dropdown-item">⚙️ Setting</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-scroll-wrapper">
+      <div class="tabs-container">
+        <a href="index.html" class="tab-btn">📊 Executive Dashboard</a>
+        <a href="Gis_map.html" class="tab-btn">🗺️ GIS Map</a>
+        <a href="AI_Route_Optimizer.html" class="tab-btn">🧠 AI Route Optimizer</a>
+        <a href="Live_fleet.html" class="tab-btn">🚛 Live Fleet & ULIP</a>
+        <a href="supply_chain.html" class="tab-btn">🌾 Supply Chain & Spoilage</a>
+        <a href="Public_fund.html" class="tab-btn">🏛️ Public Fund Governance</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-wrapper">
+    <section class="tab-pane active">
+
+      <!-- Hero Banner -->
+      <div class="sih-hero-banner">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <span class="badge badge-warning" style="margin-bottom: 0.5rem; font-weight: 700;">SIH Problem Statement ID: 26002</span>
+            <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem;" class="serif-font">NE-AURA: North Eastern Autonomous Resilient Architecture</h2>
+            <p style="font-size: 0.95rem; max-width: 800px; opacity: 0.95; line-height: 1.6;">
+              An end-to-end multi-modal logistics optimization, real-time landslide risk prediction, cold-chain spoilage mitigation, and public fund governance system specifically engineered for the 8 North Eastern States of India.
+            </p>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.15); text-align: right;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8;">Developed By</div>
+            <div style="font-size: 1.2rem; font-weight: 800; color: #86efac;" class="serif-font">Team ICONIC</div>
+            <div style="font-size: 0.75rem; opacity: 0.85;">Smart India Hackathon 2026 Finalists</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.4rem;">
+          <span class="tech-stack-chip">🧠 ST-GCN Graph Networks</span>
+          <span class="tech-stack-chip">🌐 ULIP VAHAN/SARATHI/FOIS Gateway</span>
+          <span class="tech-stack-chip">🗣️ Bhashini Multilingual AI</span>
+          <span class="tech-stack-chip">🌡️ Arrhenius PINN Thermal Model</span>
+          <span class="tech-stack-chip">📶 Offline Delta-CRDT Sync</span>
+          <span class="tech-stack-chip">🛰️ Satellite Geo-Audit AI</span>
+          <span class="tech-stack-chip">🚢 NW-2 Waterway Barges</span>
+        </div>
+      </div>
+
+      <!-- Core Platform Services -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title">
+          <h2>⚙️ Core Platform Services & Infrastructure</h2>
+          <span class="badge badge-success">6 Micro-Engines Active</span>
+        </div>
+        <div class="grid-3" style="margin-top: 1rem;">
+          <div class="glass-card">
+            <h3 style="color: var(--accent-forest); margin-bottom: 0.5rem;">🌐 ULIP Gateway</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">Unified Logistics Interface Platform binding VAHAN vehicle telemetry, SARATHI driver licensing, FASTag toll gates, and FOIS freight rail dispatching datasets.</p>
+          </div>
+          <div class="glass-card">
+            <h3 style="color: var(--accent-forest); margin-bottom: 0.5rem;">🧠 ST-GCN Risk Engine</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">Spatio-Temporal Graph Convolutional Networks predicting real-time landslide risk scores across 1,420 km of vulnerable mountain highways (NH-27, NH-44, NH-102).</p>
+          </div>
+          <div class="glass-card">
+            <h3 style="color: var(--accent-forest); margin-bottom: 0.5rem;">🗣️ Bhashini Multilingual NLP</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">Voice AI assistant supporting 10 regional North Eastern languages and local dialects (Assamese, Manipuri, Mizo, Khasi, Garo, Bodo, Nagamese, Bengali, Hindi, English).</p>
+          </div>
+          <div class="glass-card">
+            <h3 style="color: var(--accent-forest); margin-bottom: 0.5rem;">📶 Delta-CRDT Offline Sync</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">Conflict-Free Replicated Data Types powering zero-connectivity field incident reporting in mountain valleys with automatic background sync upon re-establishing 4G/5G signal.</p>
+          </div>
+          <div class="glass-card">
+            <h3 style="color: var(--accent-forest); margin-bottom: 0.5rem;">🌡️ Arrhenius PINN Engine</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">Physics-Informed Neural Networks calculating exact bio-chemical thermal degradation for perishable goods (Lakadong Turmeric, Bhut Jolokia, Queen Pineapple) based on container telemetry.</p>
+          </div>
+          <div class="glass-card">
+            <h3 style="color: var(--accent-forest); margin-bottom: 0.5rem;">🛰️ Geo-Tagging AI Audit</h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">Satellite imagery and photo EXIF geo-inspection verification engine tracking MDoNER & PM-DevINE public infrastructure funds and bridge construction progress.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Technical Architecture Deep-Dive: Intermodal Swap Matrix -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title">
+          <h2>🔀 Multi-Modal Intermodal Swap Decision Matrix</h2>
+          <span class="badge badge-info">Dynamic Routing Protocol</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 1rem;">
+          When land routes encounter extreme monsoon disruptions or landslides, NE-AURA dynamically recalculates optimal intermodal handoffs between trucks, rail freight, inland waterways, and heavy ropeways.
+        </p>
+
+        <div style="overflow-x: auto;">
+          <table class="table" style="width: 100%; text-align: left; font-size: 0.82rem;">
+            <thead>
+              <tr style="background: var(--bg-card-subtle); border-bottom: 2px solid var(--border-color);">
+                <th style="padding: 0.75rem;">Transport Mode</th>
+                <th style="padding: 0.75rem;">Switch Node / Hub</th>
+                <th style="padding: 0.75rem;">Latency SLA</th>
+                <th style="padding: 0.75rem;">Cost Delta</th>
+                <th style="padding: 0.75rem;">Monsoon Risk Tolerance</th>
+                <th style="padding: 0.75rem;">Spoilage Mitigation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Heavy Trucking (6-Axle)</strong></td>
+                <td>Guwahati Logistics Park</td>
+                <td>Baseline (1.0x)</td>
+                <td>₹0 / ton-km (Base)</td>
+                <td><span class="badge badge-danger">Low (Slope Shear Sensitive)</span></td>
+                <td>Active Reefer Container Monitoring</td>
+              </tr>
+              <tr>
+                <td><strong>Broad-Gauge Rail Freight</strong></td>
+                <td>Lumding Junction Yard</td>
+                <td>+15% Transit Time</td>
+                <td>-24% Cost Savings</td>
+                <td><span class="badge badge-warning">Medium (Track Washout Risk)</span></td>
+                <td>Ventilated Rail Cars</td>
+              </tr>
+              <tr>
+                <td><strong>Inland Waterway (NW-2)</strong></td>
+                <td>Pandu Port, Brahmaputra</td>
+                <td>+35% Transit Time</td>
+                <td>-42% Cost Savings</td>
+                <td><span class="badge badge-success">High (Navigable Flood Currents)</span></td>
+                <td>Solar-Powered Reefer Barges</td>
+              </tr>
+              <tr>
+                <td><strong>Ropeway Cableways</strong></td>
+                <td>Sela Pass / Gangtok Pass</td>
+                <td>-50% Transit Time (Short Cuts)</td>
+                <td>+18% Peak Tariff</td>
+                <td><span class="badge badge-success">High (Above Ground Shear)</span></td>
+                <td>High-Payload Insulated Pods</td>
+              </tr>
+              <tr>
+                <td><strong>Heavy Payload Cargo Drones</strong></td>
+                <td>Itanagar High-Altitude Base</td>
+                <td>-80% Emergency SLA</td>
+                <td>+110% Priority Rate</td>
+                <td><span class="badge badge-info">Extreme Emergency Only</span></td>
+                <td>Cryo-Insulated Medical Pods</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ML Model Specifications & SLAs -->
+      <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <div class="glass-card">
+          <div class="card-header-title">
+            <h3>📊 Machine Learning Model Benchmarks & SLAs</h3>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            NE-AURA deploys edge-optimised ONNX models with strict real-time inference SLAs.
+          </p>
+          <div style="overflow-x: auto;">
+            <table class="table" style="width: 100%; font-size: 0.78rem;">
+              <thead>
+                <tr style="background: var(--bg-card-subtle);">
+                  <th>Model Name</th>
+                  <th>Architecture</th>
+                  <th>Inference SLA</th>
+                  <th>Benchmark Accuracy</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>ST-GCN Highway Risk</strong></td>
+                  <td>Spatio-Temporal Graph CNN</td>
+                  <td><span class="badge badge-success">&lt;12ms</span></td>
+                  <td><strong>94.8%</strong> F1-Score</td>
+                </tr>
+                <tr>
+                  <td><strong>Arrhenius PINN</strong></td>
+                  <td>Physics-Informed Neural Net</td>
+                  <td><span class="badge badge-success">&lt;8ms</span></td>
+                  <td><strong>98.2%</strong> Degradation Acc</td>
+                </tr>
+                <tr>
+                  <td><strong>Bhashini Speech ASR</strong></td>
+                  <td>Conformer-CTC Multi-Dialect</td>
+                  <td><span class="badge badge-info">&lt;120ms</span></td>
+                  <td><strong>92.4%</strong> Word Acc Rate</td>
+                </tr>
+                <tr>
+                  <td><strong>Satellite Shear Inspector</strong></td>
+                  <td>Vision Transformer (ViT-Base)</td>
+                  <td><span class="badge badge-warning">&lt;450ms</span></td>
+                  <td><strong>96.1%</strong> Defect Precision</td>
+                </tr>
+                <tr>
+                  <td><strong>Intermodal Dynamic Router</strong></td>
+                  <td>Dijkstra A* Graph + Reinforcement</td>
+                  <td><span class="badge badge-success">&lt;45ms</span></td>
+                  <td><strong>99.1%</strong> Optimal Route</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Arrhenius Kinetic Equation Card -->
+        <div class="glass-card">
+          <div class="card-header-title">
+            <h3>🧪 Physics-Informed Arrhenius Spoilage Equation</h3>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">
+            The mathematical formulation powering real-time agricultural cargo shelf-life prediction in reefer containers:
+          </p>
+          
+          <div class="formula-card-box">
+            <div style="text-align: center; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: #86efac;">
+              k(T, H, v) = A · exp(-E<sub>a</sub> / (R · T)) · (1 + γ · H/100) · (1 + β · v)
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 0.5rem 0;">
+            <div style="font-size: 0.76rem; color: #d1d5db; line-height: 1.5;">
+              <div>• <strong>k(T, H, v)</strong>: Spoilage kinetic rate multiplier</div>
+              <div>• <strong>A</strong>: Product-specific pre-exponential factor (e.g. Lakadong Turmeric)</div>
+              <div>• <strong>E<sub>a</sub></strong>: Bio-chemical activation energy (kJ/mol)</div>
+              <div>• <strong>R</strong>: Universal gas constant (8.314 J/mol·K)</div>
+              <div>• <strong>T</strong>: Sensor telemetry container temperature (Kelvin)</div>
+              <div>• <strong>H</strong>: Relative humidity percentage modifier (γ = 0.35)</div>
+              <div>• <strong>v</strong>: Road vibration frequency spectrum modifier (β = 0.12)</div>
+            </div>
+          </div>
+
+          <div class="feature-highlight-box" style="margin-top: 0.75rem;">
+            <strong style="font-size: 0.8rem; color: var(--accent-terracotta);">💡 Operational Advantage:</strong>
+            <p style="font-size: 0.78rem; margin-top: 0.25rem;">
+              Enables dynamic rerouting *before* produce quality degrades below government public distribution standards, saving up to ₹42 Lakhs per transit batch.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12-Month Production Deployment Roadmap -->
+      <div class="glass-card" style="margin-bottom: 1.5rem;">
+        <div class="card-header-title">
+          <h2>🗓️ 12-Month Production Deployment Roadmap</h2>
+          <span class="badge badge-primary">2026 - 2027 Implementation</span>
+        </div>
+
+        <div class="grid-3" style="margin-top: 1rem;">
+          <div class="roadmap-phase-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="badge badge-info">Phase 1 (Q1-Q2 2026)</span>
+              <strong style="font-size: 0.75rem; color: var(--text-muted);">Sonapur Corridor</strong>
+            </div>
+            <h4 style="color: var(--accent-forest); margin-bottom: 0.4rem;">Core Platform & Pilot Testing</h4>
+            <ul style="font-size: 0.78rem; color: var(--text-muted); padding-left: 1.1rem; line-height: 1.5;">
+              <li>ST-GCN model deployment along NH-27 & NH-44 highway passes.</li>
+              <li>Integration with ULIP VAHAN & FASTag live telemetry stream.</li>
+              <li>Bhashini Voice AI prototype deployment in 5 languages.</li>
+            </ul>
+          </div>
+
+          <div class="roadmap-phase-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="badge badge-warning">Phase 2 (Q3-Q4 2026)</span>
+              <strong style="font-size: 0.75rem; color: var(--text-muted);">State-Wide Scale</strong>
+            </div>
+            <h4 style="color: var(--accent-forest); margin-bottom: 0.4rem;">Multi-Modal & Waterway Integration</h4>
+            <ul style="font-size: 0.78rem; color: var(--text-muted); padding-left: 1.1rem; line-height: 1.5;">
+              <li>NW-2 Brahmaputra River barge terminal integration at Pandu Port.</li>
+              <li>Delta-CRDT zero-connectivity mobile app for BRO & field officers.</li>
+              <li>Public fund geo-tagging AI validation pipeline for MDoNER.</li>
+            </ul>
+          </div>
+
+          <div class="roadmap-phase-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="badge badge-success">Phase 3 (Q1-Q2 2027)</span>
+              <strong style="font-size: 0.75rem; color: var(--text-muted);">BIMSTEC Trade</strong>
+            </div>
+            <h4 style="color: var(--accent-forest); margin-bottom: 0.4rem;">Full NE Region & Cross-Border Expansion</h4>
+            <ul style="font-size: 0.78rem; color: var(--text-muted); padding-left: 1.1rem; line-height: 1.5;">
+              <li>Expansion across all 8 North Eastern States (Assam, Meghalaya, Sikkim, Manipur, Mizoram, Nagaland, Tripura, Arunachal Pradesh).</li>
+              <li>Cross-border trade corridor analytics for BIMSTEC & Kaladan project.</li>
+              <li>Complete 10-language Bhashini NLP voice assistant rollout.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team ICONIC Engineering Profiles -->
+      <div class="glass-card">
+        <div class="card-header-title">
+          <h2>👥 Team ICONIC - Official Smart India Hackathon 2026 Roster</h2>
+          <span class="badge badge-success">Team ID: 119301</span>
+        </div>
+        
+        <!-- Team Metadata Banner -->
+        <div style="background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-top: 0.75rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+          <div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">Institution / College</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: var(--accent-forest);" class="serif-font">🏛️ Usha Martin University</div>
+          </div>
+          <div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">Team Leader</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">👑 Jeet Raj</div>
+          </div>
+          <div>
+            <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em;">Problem Statement</div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: var(--accent-terracotta);">SIH 26002 (MDoNER)</div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <!-- 1. Jeet Raj -->
+          <div class="team-member-card">
+            <div class="team-avatar-circle" style="background: linear-gradient(135deg, #d97706, #b45309);">JR</div>
+            <span class="badge badge-warning" style="margin-bottom: 0.4rem; font-size: 0.68rem;">TEAM LEADER</span>
+            <h4 style="color: var(--text-primary); font-size: 0.98rem; margin-bottom: 0.15rem;">Jeet Raj</h4>
+            <div style="font-size: 0.75rem; color: var(--accent-forest); font-weight: 700; margin-bottom: 0.4rem;">Lead Systems Architect</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Overall system architecture, multi-modal logistics flow integration, and SIH 26002 problem statement lead.
+            </p>
+          </div>
+
+          <!-- 2. Roshan Kumar Sahu -->
+          <div class="team-member-card">
+            <div class="team-avatar-circle">RS</div>
+            <span class="badge badge-success" style="margin-bottom: 0.4rem; font-size: 0.68rem;">MEMBER</span>
+            <h4 style="color: var(--text-primary); font-size: 0.98rem; margin-bottom: 0.15rem;">Roshan Kumar Sahu</h4>
+            <div style="font-size: 0.75rem; color: var(--accent-forest); font-weight: 700; margin-bottom: 0.4rem;">Lead GNN & Full-Stack AI Engineer</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Engineered ST-GCN landslide risk prediction modeling & Arrhenius PINN perishable crop degradation calculator.
+            </p>
+          </div>
+
+          <!-- 3. Satyam Kumar -->
+          <div class="team-member-card">
+            <div class="team-avatar-circle">SK</div>
+            <span class="badge badge-success" style="margin-bottom: 0.4rem; font-size: 0.68rem;">MEMBER</span>
+            <h4 style="color: var(--text-primary); font-size: 0.98rem; margin-bottom: 0.15rem;">Satyam Kumar</h4>
+            <div style="font-size: 0.75rem; color: var(--accent-forest); font-weight: 700; margin-bottom: 0.4rem;">Geospatial & ULIP Gateway Lead</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Integrated national ULIP (VAHAN, SARATHI, FASTag, FOIS) APIs & Brahmaputra NW-2 inland waterway routing.
+            </p>
+          </div>
+
+          <!-- 4. Ankit Kujur -->
+          <div class="team-member-card">
+            <div class="team-avatar-circle">AK</div>
+            <span class="badge badge-success" style="margin-bottom: 0.4rem; font-size: 0.68rem;">MEMBER</span>
+            <h4 style="color: var(--text-primary); font-size: 0.98rem; margin-bottom: 0.15rem;">Ankit Kujur</h4>
+            <div style="font-size: 0.75rem; color: var(--accent-forest); font-weight: 700; margin-bottom: 0.4rem;">Edge Compute & Delta-CRDT Engineer</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Implemented zero-connectivity conflict-free offline synchronization for mountain valley inspection units.
+            </p>
+          </div>
+
+          <!-- 5. Samir Sarar -->
+          <div class="team-member-card">
+            <div class="team-avatar-circle">SS</div>
+            <span class="badge badge-success" style="margin-bottom: 0.4rem; font-size: 0.68rem;">MEMBER</span>
+            <h4 style="color: var(--text-primary); font-size: 0.98rem; margin-bottom: 0.15rem;">Samir Sarar</h4>
+            <div style="font-size: 0.75rem; color: var(--accent-forest); font-weight: 700; margin-bottom: 0.4rem;">Multilingual Bhashini Voice AI Specialist</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Engineered 10-language voice NLP assistant supporting regional North Eastern languages & dialects.
+            </p>
+          </div>
+
+          <!-- 6. Aastha Jaiswal -->
+          <div class="team-member-card">
+            <div class="team-avatar-circle" style="background: linear-gradient(135deg, #ec4899, #be185d);">AJ</div>
+            <span class="badge badge-success" style="margin-bottom: 0.4rem; font-size: 0.68rem;">MEMBER</span>
+            <h4 style="color: var(--text-primary); font-size: 0.98rem; margin-bottom: 0.15rem;">Aastha Jaiswal</h4>
+            <div style="font-size: 0.75rem; color: var(--accent-forest); font-weight: 700; margin-bottom: 0.4rem;">UI/UX & Public Audit Governance Specialist</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+              Designed MDoNER satellite infrastructure funding audit trail & high-accessibility responsive web interfaces.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <div id="driver-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>🚗 Driver Focus View HUD</h3>
+        <button class="modal-close-btn" onclick="closeDriverModal()">&times;</button>
+      </div>
+      <div style="background: #121a12; color: #7bc96e; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: #a3b19b;">Active Highway Navigation</div>
+        <div style="font-size: 1.8rem; font-weight: 800; margin: 0.5rem 0;">NH-27 Sonapur Bypass</div>
+        <div style="font-size: 1.1rem; color: #fff; font-weight: 700;">In 1.4 km: Turn Right for NW-2 River Barge Terminal</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="incident-modal" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>📝 Report Field Incident (Delta-CRDT Offline Sync)</h3>
+        <button class="modal-close-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <form onsubmit="submitIncidentReport(event)">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="inc-category" class="form-select">
+            <option value="Landslide">Landslide / Mudslide</option>
+            <option value="Monsoon Flood">Monsoon Flash Flood</option>
+            <option value="Bridge Degradation">Bridge Shear Defect</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Highway / Corridor</label>
+          <input type="text" id="inc-highway" class="form-control" value="NH-27 Sonapur Pass" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Field Notes</label>
+          <textarea id="inc-notes" class="form-control" rows="3" required>Slope failure observed at KM 141. BRO equipment required.</textarea>
+        </div>
+        <button class="btn btn-primary" style="width: 100%;">Submit Field Report</button>
+      </form>
+    </div>
+  </div>
+
+  <button class="voice-widget-btn" onclick="toggleVoiceWidget()" title="Bhashini Voice Assistant">🗣️</button>
+  <div id="voice-assistant-panel" class="voice-assistant-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <strong style="font-size: 0.9rem; color: var(--accent-forest);">🗣️ Bhashini Voice Assistant</strong>
+      <span class="badge badge-info">10 Languages</span>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Speak or type queries in English, Hindi, Assamese, Manipuri, Mizo, Bengali, etc.</p>
+    <div class="form-group">
+      <input type="text" class="form-control" placeholder="Ask: 'Show active landslides'..." onkeydown="if(event.key==='Enter'){ showToast('Bhashini Query: Finding active landslides...'); toggleVoiceWidget(); }">
+    </div>
+  </div>
+
+  <div id="live-toast" class="live-toast" style="display: none;">
+    <div class="toast-ping"></div>
+    <div style="font-size: 0.8rem;">
+      <strong style="display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-forest);">Live Alert</strong>
+      <span id="toast-msg">Notification message</span>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div>
+        <strong style="color: var(--text-primary);" class="serif-font">NE-AURA · Smart India Hackathon 2026 (SIH 26002)</strong>
+        <p style="font-size: 0.75rem;">Autonomous Multi-Modal Logistics & Public Fund Governance Platform</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./js/script.js"></script>
+  <script src="./js/About_us.js"></script>
+</body>
+</html>

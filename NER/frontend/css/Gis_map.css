@@ -1,0 +1,151 @@
+/* ============================================================================
+   NE-AURA (SIH 26002) - GIS MAP STYLESHEET
+   Page-Specific Styles for GIS Mapping, Leaflet overlays, and Spatial UI
+   ============================================================================ */
+
+.map-container-box {
+  width: 100%;
+  height: 520px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.map-legend-overlay {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  box-shadow: var(--shadow-md);
+}
+
+body.dark-theme .map-legend-overlay {
+  background: rgba(27, 38, 27, 0.92);
+  border-color: var(--border-color);
+}
+
+.gis-pulse-marker {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--accent-terracotta);
+  display: inline-block;
+  box-shadow: 0 0 0 rgba(226, 114, 91, 0.4);
+  animation: gisPulse 2s infinite;
+}
+
+@keyframes gisPulse {
+  0% { box-shadow: 0 0 0 0 rgba(226, 114, 91, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(226, 114, 91, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(226, 114, 91, 0); }
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-card) !important;
+}
+
+/* Satellite Radar Telemetry Strip */
+.sat-radar-strip {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.1), rgba(30, 48, 26, 0.2));
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Filter Chips Toolbar */
+.gis-filter-chip {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gis-filter-chip:hover, .gis-filter-chip.active {
+  background: var(--accent-forest);
+  color: #ffffff;
+  border-color: var(--accent-forest);
+}
+
+/* Disruption Inspector Drawer Card */
+.gis-inspector-drawer {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-md);
+  margin-top: 1rem;
+}
+
+/* Regional Zoom Quick-Bar */
+.region-zoom-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.region-zoom-btn:hover {
+  background: var(--accent-forest);
+  color: #ffffff;
+  border-color: var(--accent-forest);
+}
+
+/* Map Tile Switcher Pills */
+.tile-switch-btn {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tile-switch-btn.active {
+  background: var(--accent-forest);
+  color: #ffffff;
+  border-color: var(--accent-forest);
+}
+
+/* River Gauge Telemetry Box */
+.river-gauge-box {
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px solid rgba(2, 132, 199, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  margin-top: 1rem;
+}
+
+
