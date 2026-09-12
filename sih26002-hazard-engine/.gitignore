@@ -25,3 +25,7 @@ venv/
 .idea/
 .vscode/
 .DS_Store
+
+# fabricated / downloaded raw source data (rebuilt by `python data_ingestion.py --demo`)
+data/raw/
+data/cache/

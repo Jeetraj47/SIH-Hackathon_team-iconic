@@ -4,10 +4,13 @@
 # ---------------------------------------------------------------------------
 PY   ?= python3
 ARGS ?=
+F    ?= data/raw/ner_roads.geojson
 ENGINE := hazard_prediction_engine.py
+INGEST := data_ingestion.py
 
 .DEFAULT_GOAL := help
-.PHONY: help demo pure train scenarios benchmark test selftest info audit clean distclean
+.PHONY: help demo pure train scenarios benchmark test selftest info audit \
+        ingest ingest-demo ingest-train ingest-fused inspect clean distclean
 
 help:            ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -28,7 +31,7 @@ scenarios:       ## score the 4 monsoon scenarios, emit re-weighted graphs
 benchmark:       ## real-time SLA benchmark (<2 s per 1,000 edges)
 	$(PY) $(ENGINE) --benchmark $(ARGS)
 
-test:            ## unittest suite (tests/test_engine.py)
+test:            ## unittest suite (engine + ingestion, 202 tests)
 	$(PY) -m unittest discover -s tests -v
 
 selftest:        ## built-in dependency-free self-test suite
@@ -40,8 +43,23 @@ info:            ## environment / backend capability report
 audit:           ## model-vs-generator honesty audit (--audit-dgp)
 	$(PY) $(ENGINE) --audit-dgp --regenerate-data $(ARGS)
 
+ingest-demo:     ## fabricate real-format sources offline, fuse, write the table
+	$(PY) $(INGEST) --demo $(ARGS)
+
+ingest-train:    ## demo fusion + retrain the engine on the fused table
+	$(PY) $(INGEST) --demo --train $(ARGS)
+
+ingest-fused:    ## fuse YOUR data/raw downloads and retrain (see DATASETS.md)
+	$(PY) $(INGEST) --roads data/raw/ner_roads.geojson \
+	  --landslides data/raw/gsi_landslide_inventory.csv \
+	  --dem data/raw/srtm --rainfall data/raw/imd_district_daily.csv \
+	  --moisture data/raw/era5land_soil_moisture.csv --soil online --train $(ARGS)
+
+inspect:         ## dry-run one source file: format, mapping, gaps, connectivity
+	$(PY) $(INGEST) --inspect $(F)
+
 clean:           ## remove emitted artefacts (keeps the generated inputs)
 	rm -rf outputs/* && mkdir -p outputs && touch outputs/.gitkeep
 
-distclean: clean ## remove artefacts AND generated inputs
+distclean: clean ## remove artefacts, generated inputs AND downloaded raw data
 	rm -rf data/* && mkdir -p data && touch data/.gitkeep

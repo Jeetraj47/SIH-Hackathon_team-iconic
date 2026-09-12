@@ -48,8 +48,27 @@ python hazard_prediction_engine.py --backend pure --benchmark
 
 # prove correctness
 python hazard_prediction_engine.py --selftest      # 16 built-in checks
-python -m unittest discover -s tests               # 109 unit tests
+python -m unittest discover -s tests               # 202 unit tests
 ```
+
+### Training on real data instead of the demo generator
+
+```bash
+# fabricate GSI/OSM/SRTM/IMD/ERA5/SoilGrids-shaped inputs, fuse them, retrain
+python data_ingestion.py --demo --train
+
+# then point it at YOUR downloads (see DATASETS.md for where each one comes from)
+python data_ingestion.py --inspect data/raw/gsi_landslide_inventory.csv
+python data_ingestion.py --roads data/raw/ner_roads.geojson \
+    --landslides data/raw/gsi_landslide_inventory.csv --dem data/raw/srtm \
+    --rainfall data/raw/imd_district_daily.csv --soil online --year 2023
+python hazard_prediction_engine.py --hazards data/historical_hazards_2023.csv \
+    --graph data/ner_roads.geojson --retrain
+```
+
+`data_ingestion.py` is a separate, optional module: the engine still runs
+standalone with no inputs at all. See **[DATASETS.md](DATASETS.md)** for the
+source-by-source download guide and **[§ Using real data](#-using-real-data)**.
 
 ---
 
@@ -190,7 +209,9 @@ The fallback is not a stub: it reaches the same discrimination and calibration, 
 ```
 sih26002-hazard-engine/
 ├── hazard_prediction_engine.py     # the entire engine: CLI + library (~4,800 lines)
+├── data_ingestion.py               # OPTIONAL: real-source readers + fusion CLI
 ├── README.md                       # this file
+├── DATASETS.md                     # where to download each NER source, in what format
 ├── requirements.txt                # all optional; documents the backend ladder
 ├── Makefile                        # convenience targets (demo, pure, test, audit…)
 ├── LICENSE                         # MIT
@@ -198,16 +219,20 @@ sih26002-hazard-engine/
 ├── data/                           # auto-generated on first run
 │   ├── mock_osm_graph.geojson      #   1,105 edges · 988 nodes · 5,442 km · EPSG:4326
 │   ├── historical_hazards_2023.csv #   4,952 observations · 29 columns
-│   └── historical_hazards_2023.dgp.json  # ground-truth DGP coefficients (for --audit-dgp)
+│   ├── historical_hazards_2023.dgp.json  # ground-truth DGP coefficients (for --audit-dgp)
+│   ├── raw/                        #   YOUR downloads (or --demo fabrications), untracked
+│   └── cache/soilgrids.json        #   SoilGrids REST responses, never re-fetched
 ├── outputs/                        # emitted on every run
 │   ├── graph_{light,moderate,heavy,extreme}.json   # re-weighted OSM graphs
 │   ├── route_{light,moderate,heavy,extreme}.json   # static-vs-hazard route comparisons
 │   ├── summary_{light,moderate,heavy,extreme}.json # per-scenario analytics
 │   ├── summary.json                # combined run manifest
 │   ├── hazard_model.json           # portable model card (+ .xgb.ubj native weights)
-│   └── segment_risk_register.csv   # flat per-segment register (--register <scenario>)
+│   ├── segment_risk_register.csv   # flat per-segment register (--register <scenario>)
+│   └── ingestion_report.json       # column-by-column real-vs-imputed provenance
 └── tests/
-    └── test_engine.py              # 109 unit tests, no third-party deps needed
+    ├── test_engine.py              # 109 unit tests, no third-party deps needed
+    └── test_ingestion.py           # 93 unit tests for the ingestion/fusion path
 ```
 
 `data/` and `outputs/` are git-ignored: both are rebuilt bit-identically from `seed=26002` by the first run.
@@ -451,13 +476,32 @@ Re-weighting a *state-sized* network (50,000 edges) would still take well under 
 
 ```bash
 python hazard_prediction_engine.py --selftest     # 16 built-in checks, ~8 s
-python -m unittest discover -s tests              # 109 unit tests, ~40 s
+python -m unittest discover -s tests              # 202 unit tests, ~70 s
 make test && make selftest
 ```
 
 The built-in suite (`--selftest`) travels with the single file so it can be run in the field. The `tests/` suite needs no third-party packages either.
 
 Coverage includes: haversine/bearing/offset geometry · graph determinism, connectivity and terrain plausibility · GeoJSON round-trip · hazard-log schema, seasonality and base-rate calibration · empirical-Bayes shrinkage on thin vs thick evidence · **train/serve feature parity** (both extractors must emit a byte-identical schema) · ROC/PR/log-loss/Brier/KS/ECE against hand-computed cases · stratified k-fold partitioning · Platt calibration improving ECE · the pure GBDT learning and serialising losslessly · **the cost formula asserted term-by-term against the documented expression** · monotonicity of C in P · hard-block and `--no-hard-block` behaviour · Dijkstra ≡ A* · blocked-edge detours · scenario monotonicity (mean P and cut count must rise light→extreme, and LIGHT must cut nothing) · hub resilience · the <2 s SLA · emitted-artefact validity (strict JSON, no `Infinity`) · the CLI end-to-end · and the **zero-dependency guarantee**, verified by re-importing the module inside a subprocess whose `sys.meta_path` raises `ImportError` for numpy, pandas, scikit-learn, scipy, xgboost, torch and networkx.
+
+`tests/test_ingestion.py` (93 tests) covers the real-source path with the same
+rule: no third-party packages, no network. Every "download" is a file written
+into a temp dir in the exact container the real portal serves — big-endian
+`.hgt`, ESRI `.asc`, OSM-tagged GeoJSON, GSI/IMD/ERA5-Land CSV, integer-encoded
+ISRIC JSON. It asserts: `.hgt` byte order and tile georeferencing from the
+filename · `.asc` north-first row order (the classic bug) · void cells degrading
+to neighbours rather than to −32768 m · Horn slope recovering a known gradient ·
+column sniffing across portal dialects and date formats · the rainfall index's
+API decay and its **counted** district fallback · ISRIC integer decoding ·
+porosity from bulk density · the bucket model's mass balance and its agreement
+with the satellite-moisture scale · **T-junctions surviving length-based way
+splitting** (the trap that silently fragments an ingested network into
+components and makes every corridor report `NO PATH`) · MultiLineString
+support · city-name snapping that never moves a node · the event→road join
+matching a hit **mid-segment** rather than only near the centroid · the
+case-control label design · **expanding-window `hist_freq` never leaking its own
+label** · provenance separating real from imputed columns · CLI determinism ·
+and the zero-dependency guarantee re-checked for this module too.
 
 Two tests are worth calling out because they encode judgement rather than arithmetic:
 
@@ -475,21 +519,105 @@ Two tests are worth calling out because they encode judgement rather than arithm
 
 ## 🌱 Using real data
 
-Everything here runs on synthetic demo data generated from a physically-motivated process. Swapping in real inputs requires no code changes:
+The engine ships with a synthetic generator so it runs with no inputs at all.
+`data_ingestion.py` replaces those inputs with evidence from the actual NER
+sources, and needs no code changes to the engine:
 
-**Historical hazards** — replace `data/historical_hazards_2023.csv` (or pass `--hazards`). Required columns:
-
-```
-segment_id, lat, lon, length_m, slope_deg, state, highway,
-rain_mm_hr, rain_24h_mm, api_3d_mm, soil_saturation, hist_freq_per_km,
-disrupted ∈ {0,1}
+```bash
+python data_ingestion.py --demo --train     # works offline, no pip install
 ```
 
-Optional: `timestamp, season_phase, district, elevation_m, soil_type, drainage, ndvi, cut_slope, sinuosity, surface, hazard_type, closure_hours, debris_tonnes, source, notes`. Sources worth wiring up: **BRO / NHIDCL** closure logs, **SDMA** incident reports, **IMD** nowcasts and rain gauges, **ISRO Sentinel-1/2 SAR** for cloud-penetrating change detection, and **NHAI** toll/FASTag flow as a passability proxy. `api_3d_mm` may be called `api_3d`; both keys are accepted.
+That one command fabricates every source below **in its real container**, fuses
+them, and retrains the engine on the result — so the whole path is exercised
+before you have downloaded anything.
 
-**Road graph** — replace `data/mock_osm_graph.geojson` with any EPSG:4326 `FeatureCollection` of `LineString`s. Only `length_m` is strictly required; `slope_deg`, `surface`, `soil_type`, `drainage`, `ndvi`, `cut_slope`, `sinuosity`, `speed_kmh` and `highway` are used when present and inferred otherwise. Extract with OSMnx (export the MultiDiGraph to a GeoJSON `FeatureCollection`) or `osmium` plus a short converter. Elevation comes from SRTM/Copernicus 30 m via `TerrainModel`, or ship your own `slope_deg` per way — the demo terrain field exists only because the repo cannot bundle a DEM.
+| Source | Feeds | Format the loader reads |
+|:--|:--|:--|
+| GSI Bhukosh / NGDR / NLSM landslide inventory | `disrupted`, `hazard_type`, `closure_hours`, `debris_tonnes`, `hist_freq_per_km` | CSV / TSV / GeoJSON Points, headers auto-detected |
+| OSM (Overpass, OSMnx) or NESAC / Bhuvan roads | `length_m`, `highway`, `surface`, `speed_kmh`, `cut_slope`, `sinuosity`, topology | GeoJSON `LineString` **or** `MultiLineString`, EPSG:4326 |
+| Copernicus GLO-30, SRTMGL1/NASADEM, Cartosat-1, ASTER GDEM **v3** | `slope_deg`, `elevation_m`, `relief_m`, `cut_slope` | `.hgt` (big-endian int16), ESRI `.asc`, GeoTIFF — a file or a whole directory |
+| IMD / NESAC / NEDFI rainfall | `rain_mm_hr`, `rain_24h_mm`, `api_3d_mm` | CSV in long, wide, grid or monthly layout, auto-detected |
+| ISRIC SoilGrids 2.0 | `soil_type`, `drainage`, field capacity, wilting point, porosity | REST JSON (fetched and cached for you) or a local CSV |
+| ERA5-Land or SMAP L4 | `soil_saturation` (observed, overrides the bucket model) | CSV `date,lat,lon,<moisture>` |
+| Sentinel-2 / Landsat NDVI | `ndvi` | any raster the DEM reader handles |
 
-Then `--retrain` and the whole pipeline runs unchanged on real evidence.
+**[DATASETS.md](DATASETS.md)** is the full guide: download locations, exact REST
+endpoints and query parameters, ISRIC's integer unit encoding, the four accepted
+rainfall layouts, the OSM tag table, and a troubleshooting matrix. It also
+corrects several claims that circulate in dataset guides for this region — most
+importantly that **SoilGrids does not provide soil moisture** (`wv0033`/`wv1500`
+are water-*retention* points), and that `ox.graph_to_geojson` does not exist.
+
+### The three things that decide whether a real run works
+
+**1. Inspect before you fuse.** Every reader has a dry run that reports what it
+detected rather than what you hoped it would detect:
+
+```bash
+python data_ingestion.py --inspect data/raw/ner_roads.geojson
+```
+```
+  type     : GeoJSON FeatureCollection, 30 feature(s)
+  used     : ['highway', 'surface', 'lanes', 'maxspeed', 'cutting', 'name', 'ref', 'district']
+  loaded   : 129 segments / 130 nodes / 1185.5 km (99 length splits, 20 junction splits)
+  topology : 1 connected component(s), largest 130 node(s)
+```
+
+On a road file the number that matters is **components**. In real OSM,
+connectivity lives in shared node IDs; rebuilt from coordinates, a feeder road
+that meets a trunk mid-way looks connected in QGIS and becomes a separate
+component after length-based splitting, so every corridor through it reports
+`NO PATH`. The loader runs a junction pre-pass and forces splits onto shared
+vertices, but ways that merely *touch* without sharing a vertex still need
+snapping. `--inspect` on a CSV prints the resolved column mapping and the
+layout it will be read as; on a DEM directory it prints per-tile extent, pixel
+size in metres and the **void fraction**.
+
+**2. Read the provenance report.** `outputs/ingestion_report.json` states,
+column by column, whether a feature came from a real source or from a documented
+fallback — and prints the summary at the end of every run:
+
+```
+  real-data cols  : api_3d_mm, cut_slope, disrupted, drainage, elevation_m,
+                    hist_freq_per_km, length_m, rain_24h_mm, rain_mm_hr,
+                    relief_m, sinuosity, slope_deg, soil_saturation, soil_type, state
+  IMPUTED cols    : ndvi
+```
+
+A model trained on imputed columns is not the same product as one trained on
+real ones, and the report exists so nobody has to guess which they have.
+
+**3. Labels are case-control, and history cannot leak.** A positive row is
+created *at* each matched event date, so its weather is the weather that
+actually accompanied the failure; negatives are sampled from the season,
+excluding any date within `--window` days of a known event on that segment, and
+preferentially from wet days because dry days teach nothing.
+`hist_freq_per_km` counts **only events strictly before** the row's own date,
+normalised by segment length and by seasons of inventory available at that
+point. The usual `hist_freq = len(events_on_segment)` leaks the label directly
+and produces an AUC that will not survive contact with a new monsoon.
+
+### Outputs
+
+| File | Contents |
+|:--|:--|
+| `data/historical_hazards_<year>.csv` | fused training table in the engine's 29-column schema |
+| `data/ner_roads.geojson` | road graph with DEM, soil and OSM attributes baked in — pass to `--graph` |
+| `outputs/ingestion_report.json` | column provenance + every source's parse statistics |
+
+Then retrain, and everything downstream is unchanged:
+
+```bash
+python hazard_prediction_engine.py --hazards data/historical_hazards_2023.csv \
+    --graph data/ner_roads.geojson --retrain
+```
+
+Verified end to end on the fabricated real-format inputs: 672 observations
+(156 positive), 129 segments / 1,185 km in one connected component, 9 named
+city hubs, **ROC AUC 0.9488 ± 0.0228**, PR-AUC 0.8403, ECE 0.038, and observed
+disruption rates rising monotonically across the risk bands (0.08× → 3.69×
+lift). The same run reproduces bit-identically with numpy and rasterio blocked
+from importing.
 
 ---
 
@@ -497,14 +625,16 @@ Then `--retrain` and the whole pipeline runs unchanged on real evidence.
 
 Stated plainly, because a hazard product that oversells itself is worse than no product:
 
-1. **The demo data is synthetic.** Slopes, soils, rainfall cells and hazard counts come from a documented generator (`DGP` coefficients shipped in `data/*.dgp.json`), georeferenced to real NER cities, highways and elevations. It exercises the pipeline; it is not evidence about any actual road. `--audit-dgp` exists so the model can be checked against known truth rather than trusted on its AUC.
-2. **No live weather feed.** The four scenarios are canned fields. Production needs IMD/nowcast ingestion into a `WeatherState`; the scoring path already accepts one.
+1. **The engine's built-in demo data is synthetic.** Slopes, soils, rainfall cells and hazard counts come from a documented generator (`DGP` coefficients shipped in `data/*.dgp.json`), georeferenced to real NER cities, highways and elevations. It exercises the pipeline; it is not evidence about any actual road. `--audit-dgp` exists so the model can be checked against known truth rather than trusted on its AUC. `data_ingestion.py --demo` likewise fabricates its inputs — in the real source *formats*, but not with real values — and says so on every run.
+2. **No live weather feed.** `data_ingestion.py` reads *historical* IMD/NESAC/NEDFI rainfall; the four scoring scenarios are still canned fields. Production needs IMD nowcast ingestion into a `WeatherState` — the scoring path already accepts one, and the historical reader is the shape it would take.
 3. **Closure *hours* are heuristic.** `expected_closure_hours` is a susceptibility-weighted estimate for ranking routes, not a clearance-time forecast. BRO task-force deployment, debris volume and single-carriageway vs double-lane matters are not modelled.
 4. **No temporal dynamics.** Rain cells are static snapshots; there is no recession curve, no forecast horizon, no convoy-in-motion re-planning.
 5. **Correlation is not causation.** `slope_x_rain` dominating importance reflects the generator's physics, and would need re-validation on real logs — reporting bias (incidents are reported where people are) is a genuine hazard for this feature set.
 6. **EXTREME severs most corridors.** At 78 mm/h peak with 174 impassable segments, hub-to-hub connectivity drops to 8.2%. The engine reports this rather than routing through statistically closed roads — the correct answer is "do not dispatch", and a planner that pretended otherwise would be dangerous.
 
-**Roadmap:** IMD live ingestion · SRTM/Copernicus DEM loader for real `slope_deg` · temporal recession + forecast horizon · multi-modal swap hooks (road → rail → NW-2 waterway → air-lift, per NE-AURA) · clearance-time model from BRO task-force data · per-vehicle-type speed profiles · streaming re-weight for networks >10⁶ edges.
+**Done since the first release:** real DEM loading (`.hgt` / `.asc` / GeoTIFF, mosaiced, void-tolerant) for `slope_deg`, `elevation_m` and `relief_m` · ISRIC SoilGrids client with disk cache for `soil_type`, `drainage` and water retention · ERA5-Land / SMAP soil-moisture ingestion · IMD/NESAC/NEDFI rainfall readers in four layouts · GSI/NGDR inventory readers with header sniffing · OSM road ingestion with junction-preserving splits and city-name snapping · column-level provenance reporting.
+
+**Roadmap:** IMD *live* nowcast ingestion · temporal recession + forecast horizon · multi-modal swap hooks (road → rail → NW-2 waterway → air-lift, per NE-AURA) · clearance-time model from BRO task-force data · per-vehicle-type speed profiles · streaming re-weight for networks >10⁶ edges · Sentinel-1 SAR change detection for post-event verification.
 
 ---
 
