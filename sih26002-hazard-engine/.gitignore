@@ -1,0 +1,27 @@
+# ---------------------------------------------------------------------------
+# SIH26002 Hazard Prediction Engine — generated artefacts are NOT tracked.
+# Everything below is rebuilt deterministically by `python hazard_prediction_engine.py`.
+# ---------------------------------------------------------------------------
+
+# auto-generated inputs (deterministic from seed 26002)
+data/*.geojson
+data/*.csv
+data/*.json
+
+# emitted artefacts
+outputs/*
+!outputs/.gitkeep
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# virtual envs / editors
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store

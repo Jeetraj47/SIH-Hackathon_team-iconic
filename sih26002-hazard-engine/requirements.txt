@@ -1,0 +1,37 @@
+# ===========================================================================
+#  SIH26002 — Hazard Prediction Engine for Disaster-Prone Terrain
+#  ZERO REQUIRED DEPENDENCIES.
+# ===========================================================================
+#
+#  The engine runs end-to-end on the Python 3.9+ standard library alone:
+#
+#      python hazard_prediction_engine.py
+#
+#  When nothing below is installed it falls back to a built-in pure-Python
+#  Newton-boosted histogram tree ensemble (same JSON model card, same API,
+#  ~16 s to train, ~20 000 edges/s to score).
+#
+#  Everything listed here is OPTIONAL.  It only upgrades the default backend
+#  or unlocks an integration bridge:
+#
+#      backend priority:  xgboost  >  scikit-learn  >  pytorch  >  built-in pure
+#
+#  Install the full experience with:
+#      pip install -r requirements.txt
+#
+# ===========================================================================
+
+# --- preferred gradient-boosting backend (fastest training + scoring) -------
+xgboost>=1.7
+
+# --- second-priority backend, plus permutation importance -------------------
+scikit-learn>=1.1
+
+# --- array / dataframe layer used by the two backends above -----------------
+numpy>=1.21
+pandas>=1.3
+
+# --- OPTIONAL bridges (imported lazily; absent by default) ------------------
+networkx>=2.6        # RoadGraph.to_networkx() -> weighted graph / betweenness
+torch>=1.13          # research MLP/GNN backend (--backend torch)
+scipy>=1.8           # used by networkx and for optional stats helpers
