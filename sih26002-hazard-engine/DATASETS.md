@@ -14,12 +14,13 @@ be exercised offline. This file is for replacing those stand-ins with evidence.
 | # | Source | Feeds | Container the loader reads | Flag |
 |:--|:--|:--|:--|:--|
 | 1 | **GSI Bhukosh / NGDR / NLSM** landslide inventory | `disrupted`, `hazard_type`, `closure_hours`, `debris_tonnes`, `hist_freq_per_km` | CSV, TSV, GeoJSON FeatureCollection (Point) — headers auto-detected | `--landslides` |
-| 2 | **OSM** (Overpass / OSMnx) or **NESAC / Bhuvan** roads | `length_m`, `highway`, `surface`, `speed_kmh`, `cut_slope`, `sinuosity`, network topology | GeoJSON `LineString` **or** `MultiLineString`, EPSG:4326 | `--roads` |
+| 2 | **OSM** (Overpass / OSMnx) or **NESAC / Bhuvan** roads | `length_m`, `highway`, `surface`, `speed_kmh`, `cut_slope`, `sinuosity`, network topology | GeoJSON `LineString` **or** `MultiLineString`, EPSG:4326 — **or fetched live for you** | `--roads`, or `--state` / `--bbox` |
 | 3 | **Copernicus GLO-30 / SRTMGL1 / NASADEM / Cartosat-1 / ASTER GDEM v3** | `slope_deg`, `elevation_m`, `relief_m`, `cut_slope`, `grade_pct` | `.hgt` (big-endian int16), ESRI `.asc`, GeoTIFF (needs `rasterio`) — a single file or a whole directory | `--dem` |
 | 4 | **IMD / NESAC / NEDFI** rainfall | `rain_mm_hr`, `rain_24h_mm`, `api_3d_mm` | CSV in long, wide, grid or monthly layout — auto-detected | `--rainfall` |
 | 5 | **ISRIC SoilGrids 2.0** | `soil_type`, `drainage`, field capacity, wilting point, porosity | REST JSON (fetched for you) or a local `lat,lon,clay,…` CSV | `--soil online` / `--soil-csv` |
 | 6 | **ERA5-Land** or **SMAP L4** soil moisture | `soil_saturation` (observed, overrides the bucket model) | CSV `date,lat,lon,<moisture>` | `--moisture` |
 | 7 | **Sentinel-2 / Landsat NDVI** | `ndvi` | any raster the DEM reader handles (`--ndvi` is read as a raster and rescaled) | `--ndvi` |
+| 8 | **Pre-computed slope** — GDAL `gdaldem slope`, QGIS raster terrain analysis, or an ASTER derivative | `slope_deg`, taking precedence over slope derived from `--dem` | ESRI `.asc` or GeoTIFF, in degrees **or** percent gradient — the unit is detected | `--slope-tif` |
 
 `state`, `district` come from the road properties when present, else from a
 bounding-box lookup over the eight NER states.
@@ -69,6 +70,52 @@ which prints per-tile extent, pixel size in metres, min/median/max elevation and
 the **void fraction**. SRTM3 has systematic voids over steep, cloud-covered NER
 terrain; a tile reporting 40 % voids is not usable as-is. Void cells degrade to
 the mean of their valid neighbours rather than to −32768 m.
+
+### Pre-computed slope rasters (`--slope-tif`)
+
+Agencies often hand you a *slope* product rather than an elevation one — ASTER
+derivatives, state remote-sensing centres, or a `gdaldem slope` run someone did
+in 2019. Pass it directly:
+
+```bash
+gdaldem slope in.tif slope_deg.tif                    # degrees (the default)
+gdaldem slope -p in.tif slope_pct.tif                 # percent gradient
+python data_ingestion.py --slope-tif data/raw/slope_deg.tif --landslides inv.csv
+```
+
+It takes precedence over slope derived from `--dem`, because an agency product
+was usually computed on a hydrologically conditioned DEM at full resolution,
+while deriving it in-process resamples at the road's own vertices. Elevation,
+relief, grade and the cut-face inference still come from `--dem` — pass both
+when you have both. With `--slope-tif` alone the run says so and lists
+`elevation_m`, `relief_m`, `grade_pct` and `cut_slope` as imputed.
+
+**Degrees and percent gradient are not distinguishable from the filename**, and
+reading one as the other is not a crash — it is a feature inflated roughly
+tenfold that the model happily trains on, with every degrees-calibrated
+threshold (the `slope_deg ≥ 12` cut-face rule) firing everywhere. Slope in
+degrees cannot exceed 90, so the loader samples the raster, and anything above
+90 is percent, converted with `atan()` — **not** divided by 100, since 100 %
+gradient is 45°, and dividing would have said 1°. The detected unit is printed
+and recorded in the provenance report.
+
+```
+  slope raster          : 576 samples, range 0.0..71.5 -> read as degrees
+  terrain enrichment    : 129/129 segments hit the DEM, mean slope 33.0 deg
+                          (p90 41.2), cuts 12.4%; slope from --slope-tif on
+                          129/129 segments
+```
+
+A raster in a projected CRS (UTM is common for slope products) will miss every
+segment. That is reported, not guessed at:
+
+```
+  ! the --slope-tif raster covered NONE of the segments, so slope fell back to
+    the DEM or to segment endpoints. Check that it is in EPSG:4326 and overlaps
+    the road network - a UTM slope product will silently miss every point.
+```
+
+Reproject with `gdalwarp -t_srs EPSG:4326 in.tif out.tif`.
 
 ---
 
@@ -128,6 +175,82 @@ correct it.
 ---
 
 ## 4. Roads — OSM, NESAC or Bhuvan
+
+### Letting the pipeline fetch it for you
+
+Neither query below has to be run by hand. Omit `--roads` and name a state
+and/or a window:
+
+```bash
+python data_ingestion.py --state Mizoram --landslides data/raw/gsi_inventory.csv
+python data_ingestion.py --state Assam --bbox 24.0,89.5,28.0,96.0 --gsi-csv inv.csv
+python data_ingestion.py --bbox 21.9,91.5,24.5,93.5 --landslides inv.csv
+python data_ingestion.py --state Mizoram --offline --landslides inv.csv   # cached
+```
+
+| Flag | Effect |
+|:--|:--|
+| `--state` | One of the eight NER states. Short codes (`mz`, `as`, `ap`, `ml`, `nl`, `mn`, `tr`, `sk`) and case variants are accepted; an unknown name errors and lists the known ones rather than picking a near-miss |
+| `--bbox` | Read as `S,W,N,E` **or** `W,S,E,N`, told apart by magnitude. Overrides the state box |
+| `--network-type` | `drive` (default) or `all`, which adds `track` / `service` / `footway` — worth it where the inventory references rural tracks |
+| `--max-edges` | Cap on ways. Default 4000; `0` = unlimited |
+| `--road-cache` | Where the fetch is stored. Default `<cache-dir>/osm_<state>.geojson`, or `osm_<hash>.geojson` for a bare `--bbox` |
+| `--overpass-timeout` | Seconds allowed per Overpass query (default 180) |
+| `--offline` | Never dial out — use caches, or stop with an explanation |
+
+**Order of attempts:** the cache, then OSMnx if it is installed, then Overpass
+(`overpass-api.de` → `overpass.kumi.systems` → `overpass.private.coffee`). The
+Overpass path uses only the standard library. The OSMnx path is converted
+straight off the graph object, so it needs neither `geopandas` nor `pyogrio` —
+and `osmnx` is imported on first use, not at module load, because it drags in
+half the geospatial stack and costs several seconds even when the roads are
+already a file on disk.
+
+**Fetches are cached**, so only the first run needs network access. The cache
+records the window it was fetched for. Ask for a different window and it
+re-fetches; add `--offline` and it uses the stale file *and says so loudly*:
+
+```
+  ! that cache was fetched for bbox [93.0, 24.0, 93.8, 24.8], not the requested
+    [92.1, 21.9, 93.5, 24.6]. --offline forces its use; drop --offline or delete
+    the file to re-fetch.
+```
+
+Routing over another region's roads produces plausible numbers that no metric
+would flag, so that warning is not optional.
+
+**`--max-edges` shrinks the window; it never samples rows.** Capping a network
+with `edges.sample(n)` — the obvious approach — picks ways at random, so almost
+every survivor loses its neighbours and the "network" becomes thousands of
+two-node islands. Routing then reports `NO PATH` for every corridor while
+nothing anywhere raises an error. Shrinking the *window* keeps the ways inside
+it connected to each other; a test in `tests/test_ingestion.py` measures both
+against the same lattice and asserts the cropped graph stays >90 % one
+component while the sampled one does not.
+
+The window centres on the **median** inventory coordinate, not the box centre,
+so a 500 km-wide state box still fetches the roads where the landslides
+actually are. The median, not the mean, so a handful of mistyped coordinates
+cannot drag it out of the region. This is why the inventory is read before the
+roads.
+
+State boxes used when `--bbox` is not given:
+
+| State | W | S | E | N |
+|:--|--:|--:|--:|--:|
+| Sikkim | 88.0 | 27.0 | 88.9 | 28.2 |
+| Assam | 89.5 | 24.0 | 96.1 | 28.0 |
+| Meghalaya | 89.5 | 24.9 | 92.9 | 26.2 |
+| Tripura | 91.1 | 22.9 | 92.4 | 24.4 |
+| Arunachal Pradesh | 91.5 | 26.5 | 97.4 | 29.5 |
+| Mizoram | 92.1 | 21.9 | 93.5 | 24.6 |
+| Manipur | 92.9 | 23.8 | 94.8 | 25.7 |
+| Nagaland | 93.3 | 25.2 | 95.4 | 27.1 |
+
+These are each state's own extent, not a generous padding — Mizoram's west edge
+is 92.1° E, and 91.5° E reaches into Bangladesh, which would add roads that
+`state_of()` then labels wrongly. Widen deliberately with `--bbox` if you want
+cross-border context.
 
 ### Overpass (no Python dependencies)
 
@@ -421,6 +544,10 @@ cd sih26002-hazard-engine
 # 0. see the pipeline work with fabricated real-format inputs, no network
 python data_ingestion.py --demo --train
 
+# 1a. or let it fetch the roads for a state, and cache them for later runs
+python data_ingestion.py --state Mizoram --landslides data/raw/gsi_inventory.csv
+python data_ingestion.py --state Mizoram --offline --landslides data/raw/gsi_inventory.csv
+
 # 1. put your downloads in data/raw/ and check each one before fusing
 python data_ingestion.py --inspect data/raw/ner_roads.geojson
 python data_ingestion.py --inspect data/raw/gsi_landslide_inventory.csv
@@ -503,7 +630,9 @@ These appear in dataset guides for this region and are wrong:
 | "SoilGrids gives soil moisture" | It gives **water-retention points** (`wv0033` = field capacity, `wv1500` = wilting point) and texture/chemistry. Static soil properties, not state. Moisture comes from ERA5-Land or SMAP |
 | "SoilGrids has a saturated-hydraulic-conductivity layer" | SoilGrids 2.0 does not publish `ksat` through the REST API. Drainage here is a pedotransfer proxy from texture and bulk density |
 | "`ox.graph_to_geojson(G)`" | Does not exist. Use `ox.convert.graph_to_gdfs` then `gdf.to_file(..., driver="GeoJSON")` |
-| "`graph_from_bbox(north, south, east, west)`" | The order is `(west, south, east, north)` |
+| "`graph_from_bbox(north, south, east, west)`" | The order is `(west, south, east, north)`. Note that Overpass and most GIS tools use the *opposite* convention, `S,W,N,E`, which is why `--bbox` detects the ordering from the values instead of trusting you to remember which tool you copied it from |
+| "A slope raster is in degrees" | GDAL's `gdaldem slope -p`, QGIS's raster terrain analysis and several agency products emit **percent gradient**. Nothing in the filename says which. Anything above 90 cannot be degrees |
+| "Cap a big OSM fetch with `edges.sample(n)`" | Random row sampling destroys connectivity: every surviving way loses its neighbours, so routing reports `NO PATH` everywhere and nothing raises an error. Shrink the *window* instead |
 | "ASTER GDEM v2 is the current version" | **V003** is current (DOI `10.5067/ASTER/ASTGTM.003`); V002 is superseded. For India, Cartosat-1 DEM, NASADEM or Copernicus GLO-30 are all better choices |
 | "Cartosat-1 DEM is 10 m" | The publicly distributed Cartosat-1 DEM is **30 m** (1 arc-sec). The 10 m / 2.5 m products are Cartosat-2S/3 stereo pairs and are not in the open archive |
 | "SRTM tile `N26E091` covers 25–26 N" | It covers **26–27 N**: the name is the south-west corner |
@@ -522,6 +651,13 @@ These appear in dataset guides for this region and are wrong:
 | `reading GeoTIFF needs rasterio` | No rasterio installed | `pip install rasterio`, or `gdal_translate -of AAIGrid in.tif out.asc` |
 | Soil all `laterite`, drainage 0.5 | No soil source reached | `--soil online`, or `--soil-csv`. The provenance report lists `soil_type`/`drainage` as imputed |
 | `no DEM tiles found` | Directory holds no `.hgt`/`.asc`/`.tif` | Check the path; the error is deliberate — an empty mosaic would silently zero slope and elevation |
+| `all Overpass endpoints failed` | Rate-limited, or the machine has no egress | Run the query in <https://overpass-turbo.eu>, **Export → GeoJSON**, and pass it as `--roads` |
+| `the fetch returned 0 ways` | Window is empty, or `--bbox` was transposed | The error names both orderings; check against a map before widening |
+| `--offline was given but there is no cached road network` | No previous fetch to replay | Fetch once with network access, or pass `--roads` |
+| `largest component holds X/Y nodes — this network is FRAGMENTED` | Ways that touch geometrically without sharing a vertex | `--inspect` the network for the component breakdown; snap in QGIS or fix in OSM |
+| `the --slope-tif raster covered NONE of the segments` | Slope product in a projected CRS, or a different extent | `gdalwarp -t_srs EPSG:4326 in.tif out.tif` |
+| `--slope-tif without --dem` | Only slope was supplied | Expected if that is all you have — elevation, relief, grade and cut faces stay imputed. Add `--dem` to fill them |
+| `unknown --state` | A state outside the NER, or a typo | The error lists the eight known states and their short codes |
 
 ---
 

@@ -57,10 +57,16 @@ python -m unittest discover -s tests               # 202 unit tests
 # fabricate GSI/OSM/SRTM/IMD/ERA5/SoilGrids-shaped inputs, fuse them, retrain
 python data_ingestion.py --demo --train
 
+# or let it FETCH the roads for a state (OSMnx if installed, else Overpass)
+python data_ingestion.py --state Mizoram --bbox 21.9,91.5,24.5,93.5 \
+    --landslides data/raw/gsi_inventory.csv --dem data/raw/srtm --train
+python data_ingestion.py --state Mizoram --offline --landslides data/raw/gsi_inventory.csv
+
 # then point it at YOUR downloads (see DATASETS.md for where each one comes from)
 python data_ingestion.py --inspect data/raw/gsi_landslide_inventory.csv
 python data_ingestion.py --roads data/raw/ner_roads.geojson \
     --landslides data/raw/gsi_landslide_inventory.csv --dem data/raw/srtm \
+    --slope-tif data/raw/aster_slope.tif \
     --rainfall data/raw/imd_district_daily.csv --soil online --year 2023
 python hazard_prediction_engine.py --hazards data/historical_hazards_2023.csv \
     --graph data/ner_roads.geojson --retrain
@@ -232,7 +238,7 @@ sih26002-hazard-engine/
 │   └── ingestion_report.json       # column-by-column real-vs-imputed provenance
 └── tests/
     ├── test_engine.py              # 109 unit tests, no third-party deps needed
-    └── test_ingestion.py           # 93 unit tests for the ingestion/fusion path
+    └── test_ingestion.py           # 147 unit tests for the ingestion/fusion path
 ```
 
 `data/` and `outputs/` are git-ignored: both are rebuilt bit-identically from `seed=26002` by the first run.
@@ -476,7 +482,7 @@ Re-weighting a *state-sized* network (50,000 edges) would still take well under 
 
 ```bash
 python hazard_prediction_engine.py --selftest     # 16 built-in checks, ~8 s
-python -m unittest discover -s tests              # 202 unit tests, ~70 s
+python -m unittest discover -s tests              # 256 unit tests, ~105 s
 make test && make selftest
 ```
 
@@ -484,7 +490,7 @@ The built-in suite (`--selftest`) travels with the single file so it can be run 
 
 Coverage includes: haversine/bearing/offset geometry · graph determinism, connectivity and terrain plausibility · GeoJSON round-trip · hazard-log schema, seasonality and base-rate calibration · empirical-Bayes shrinkage on thin vs thick evidence · **train/serve feature parity** (both extractors must emit a byte-identical schema) · ROC/PR/log-loss/Brier/KS/ECE against hand-computed cases · stratified k-fold partitioning · Platt calibration improving ECE · the pure GBDT learning and serialising losslessly · **the cost formula asserted term-by-term against the documented expression** · monotonicity of C in P · hard-block and `--no-hard-block` behaviour · Dijkstra ≡ A* · blocked-edge detours · scenario monotonicity (mean P and cut count must rise light→extreme, and LIGHT must cut nothing) · hub resilience · the <2 s SLA · emitted-artefact validity (strict JSON, no `Infinity`) · the CLI end-to-end · and the **zero-dependency guarantee**, verified by re-importing the module inside a subprocess whose `sys.meta_path` raises `ImportError` for numpy, pandas, scikit-learn, scipy, xgboost, torch and networkx.
 
-`tests/test_ingestion.py` (93 tests) covers the real-source path with the same
+`tests/test_ingestion.py` (147 tests) covers the real-source path with the same
 rule: no third-party packages, no network. Every "download" is a file written
 into a temp dir in the exact container the real portal serves — big-endian
 `.hgt`, ESRI `.asc`, OSM-tagged GeoJSON, GSI/IMD/ERA5-Land CSV, integer-encoded
@@ -502,6 +508,18 @@ matching a hit **mid-segment** rather than only near the centroid · the
 case-control label design · **expanding-window `hist_freq` never leaking its own
 label** · provenance separating real from imputed columns · CLI determinism ·
 and the zero-dependency guarantee re-checked for this module too.
+
+The fetch path is covered without a network: Overpass and OSMnx replies are
+converted from stub objects, so neither `geopandas` nor `shapely` nor `osmnx`
+needs to be installed. It asserts both `--bbox` orderings resolve to one
+answer · an over-large or transposed box is refused rather than silently
+cropped · the inventory centroid is a **median**, so one mistyped coordinate
+cannot move the fetch window · and — the one that encodes the most judgement —
+that capping a fetch by **shrinking the window** leaves >90 % of the network in
+one component while capping it by **sampling rows**, the obvious approach, does
+not. The offline contract is tested too: a cache hit must not touch the
+network, `--offline` with no cache must stop with instructions rather than dial
+out, and a cache fetched for a different window must be announced loudly.
 
 Two tests are worth calling out because they encode judgement rather than arithmetic:
 
@@ -534,12 +552,13 @@ before you have downloaded anything.
 | Source | Feeds | Format the loader reads |
 |:--|:--|:--|
 | GSI Bhukosh / NGDR / NLSM landslide inventory | `disrupted`, `hazard_type`, `closure_hours`, `debris_tonnes`, `hist_freq_per_km` | CSV / TSV / GeoJSON Points, headers auto-detected |
-| OSM (Overpass, OSMnx) or NESAC / Bhuvan roads | `length_m`, `highway`, `surface`, `speed_kmh`, `cut_slope`, `sinuosity`, topology | GeoJSON `LineString` **or** `MultiLineString`, EPSG:4326 |
+| OSM (Overpass, OSMnx) or NESAC / Bhuvan roads | `length_m`, `highway`, `surface`, `speed_kmh`, `cut_slope`, `sinuosity`, topology | GeoJSON `LineString` **or** `MultiLineString`, EPSG:4326 — **or fetched live** with `--state` / `--bbox` |
 | Copernicus GLO-30, SRTMGL1/NASADEM, Cartosat-1, ASTER GDEM **v3** | `slope_deg`, `elevation_m`, `relief_m`, `cut_slope` | `.hgt` (big-endian int16), ESRI `.asc`, GeoTIFF — a file or a whole directory |
 | IMD / NESAC / NEDFI rainfall | `rain_mm_hr`, `rain_24h_mm`, `api_3d_mm` | CSV in long, wide, grid or monthly layout, auto-detected |
 | ISRIC SoilGrids 2.0 | `soil_type`, `drainage`, field capacity, wilting point, porosity | REST JSON (fetched and cached for you) or a local CSV |
 | ERA5-Land or SMAP L4 | `soil_saturation` (observed, overrides the bucket model) | CSV `date,lat,lon,<moisture>` |
 | Sentinel-2 / Landsat NDVI | `ndvi` | any raster the DEM reader handles |
+| Pre-computed slope (GDAL, QGIS, ASTER derivative) | `slope_deg`, ahead of DEM-derived slope | ESRI `.asc` or GeoTIFF, degrees **or** percent — the unit is detected |
 
 **[DATASETS.md](DATASETS.md)** is the full guide: download locations, exact REST
 endpoints and query parameters, ISRIC's integer unit encoding, the four accepted
@@ -547,6 +566,41 @@ rainfall layouts, the OSM tag table, and a troubleshooting matrix. It also
 corrects several claims that circulate in dataset guides for this region — most
 importantly that **SoilGrids does not provide soil moisture** (`wv0033`/`wv1500`
 are water-*retention* points), and that `ox.graph_to_geojson` does not exist.
+
+### Getting the roads without downloading them
+
+Roads are the one source the pipeline can fetch for itself. Omit `--roads` and
+name a window:
+
+```bash
+python data_ingestion.py --state Mizoram --landslides data/raw/gsi_inventory.csv
+python data_ingestion.py --state Assam --bbox 24.0,89.5,28.0,96.0 --gsi-csv inv.csv
+```
+
+It tries the on-disk cache, then OSMnx if installed, then the Overpass API
+across three mirrors — the last of those needs nothing but the standard
+library, and the OSMnx path is converted straight off the graph object so it
+needs neither `geopandas` nor `pyogrio`. `osmnx` is imported on first use, not
+at module load: it drags in half the geospatial stack and would cost several
+seconds on every run even when the roads are already a file.
+
+Every fetch is cached, so only the first run needs network access, and
+`--offline` turns that into a hard promise — the run uses caches or stops with
+an explanation, and never dials out. Two details matter more than they look:
+
+- `--bbox` is read as `S,W,N,E` **or** `W,S,E,N`. Overpass and OSMnx use
+  opposite conventions, so the ordering is detected from the values instead of
+  trusting you to remember which tool you copied it from. A transposed or
+  over-large box is refused with the reason, not silently cropped.
+- `--max-edges` **shrinks the window; it never samples rows.** Random sampling
+  leaves every surviving way without its neighbours, so the "network" becomes
+  thousands of two-node islands and routing reports `NO PATH` everywhere while
+  nothing raises an error. The window centres on the *median* inventory
+  coordinate, so a 500 km-wide state box still fetches where the landslides are.
+
+Inventories and rainfall it still cannot fetch: Bhukosh, NGDR, NLSM and the
+NEDFI databank sit behind interactive sessions and registration, so there is no
+honest way to script them.
 
 ### The three things that decide whether a real run works
 
@@ -632,7 +686,7 @@ Stated plainly, because a hazard product that oversells itself is worse than no 
 5. **Correlation is not causation.** `slope_x_rain` dominating importance reflects the generator's physics, and would need re-validation on real logs — reporting bias (incidents are reported where people are) is a genuine hazard for this feature set.
 6. **EXTREME severs most corridors.** At 78 mm/h peak with 174 impassable segments, hub-to-hub connectivity drops to 8.2%. The engine reports this rather than routing through statistically closed roads — the correct answer is "do not dispatch", and a planner that pretended otherwise would be dangerous.
 
-**Done since the first release:** real DEM loading (`.hgt` / `.asc` / GeoTIFF, mosaiced, void-tolerant) for `slope_deg`, `elevation_m` and `relief_m` · ISRIC SoilGrids client with disk cache for `soil_type`, `drainage` and water retention · ERA5-Land / SMAP soil-moisture ingestion · IMD/NESAC/NEDFI rainfall readers in four layouts · GSI/NGDR inventory readers with header sniffing · OSM road ingestion with junction-preserving splits and city-name snapping · column-level provenance reporting.
+**Done since the first release:** real DEM loading (`.hgt` / `.asc` / GeoTIFF, mosaiced, void-tolerant) for `slope_deg`, `elevation_m` and `relief_m` · ISRIC SoilGrids client with disk cache for `soil_type`, `drainage` and water retention · ERA5-Land / SMAP soil-moisture ingestion · IMD/NESAC/NEDFI rainfall readers in four layouts · GSI/NGDR inventory readers with header sniffing · OSM road ingestion with junction-preserving splits and city-name snapping · column-level provenance reporting · **live OSM road fetching** by `--state` / `--bbox` (OSMnx or Overpass, cached, with `--offline` as a hard promise) · **pre-computed slope rasters** via `--slope-tif` with automatic degree/percent detection · `--inspect` dry runs · optional `logging` output via `--log-level` / `--log-file`.
 
 **Roadmap:** IMD *live* nowcast ingestion · temporal recession + forecast horizon · multi-modal swap hooks (road → rail → NW-2 waterway → air-lift, per NE-AURA) · clearance-time model from BRO task-force data · per-vehicle-type speed profiles · streaming re-weight for networks >10⁶ edges · Sentinel-1 SAR change detection for post-event verification.
 

@@ -2,15 +2,18 @@
 #  SIH26002 Hazard Prediction Engine — convenience targets
 #  Nothing here is required; every target is a plain python invocation.
 # ---------------------------------------------------------------------------
-PY   ?= python3
-ARGS ?=
-F    ?= data/raw/ner_roads.geojson
+PY    ?= python3
+ARGS  ?=
+F     ?= data/raw/ner_roads.geojson
+STATE ?= Mizoram
+INV   ?= data/raw/gsi_landslide_inventory.csv
 ENGINE := hazard_prediction_engine.py
 INGEST := data_ingestion.py
 
 .DEFAULT_GOAL := help
 .PHONY: help demo pure train scenarios benchmark test selftest info audit \
-        ingest ingest-demo ingest-train ingest-fused inspect clean distclean
+        ingest ingest-demo ingest-train ingest-fused ingest-live ingest-offline \
+        inspect clean distclean
 
 help:            ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -54,6 +57,12 @@ ingest-fused:    ## fuse YOUR data/raw downloads and retrain (see DATASETS.md)
 	  --landslides data/raw/gsi_landslide_inventory.csv \
 	  --dem data/raw/srtm --rainfall data/raw/imd_district_daily.csv \
 	  --moisture data/raw/era5land_soil_moisture.csv --soil online --train $(ARGS)
+
+ingest-live:     ## FETCH roads for STATE=$(STATE), fuse with INV, retrain
+	$(PY) $(INGEST) --state $(STATE) --landslides $(INV) --train $(ARGS)
+
+ingest-offline:  ## same, but never dial out - cached roads and soils only
+	$(PY) $(INGEST) --state $(STATE) --landslides $(INV) --offline --train $(ARGS)
 
 inspect:         ## dry-run one source file: format, mapping, gaps, connectivity
 	$(PY) $(INGEST) --inspect $(F)

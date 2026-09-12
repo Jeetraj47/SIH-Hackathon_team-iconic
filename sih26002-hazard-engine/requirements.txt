@@ -36,6 +36,12 @@ networkx>=2.6        # RoadGraph.to_networkx() -> weighted graph / betweenness
 torch>=1.13          # research MLP/GNN backend (--backend torch)
 scipy>=1.8           # used by networkx and for optional stats helpers
 
+# --- OPTIONAL, only for data_ingestion.py fetching roads from OSM ------------
+# Without it the pipeline fetches roads through the Overpass API using urllib,
+# which needs nothing at all.  Install this if you would rather query OSMnx
+# directly (it pulls in geopandas, shapely, networkx and pyproj):
+osmnx>=1.9           # data_ingestion.py --state Mizoram  (live OSM road fetch)
+
 # --- OPTIONAL, only for data_ingestion.py reading GeoTIFF directly ----------
 # .hgt (SRTM/NASADEM) and ESRI .asc grids are parsed by the standard library
 # and need nothing at all.  Install this only if your DEM or NDVI arrives as a

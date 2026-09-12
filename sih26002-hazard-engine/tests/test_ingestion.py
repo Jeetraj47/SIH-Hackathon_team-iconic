@@ -21,11 +21,19 @@ mapping, the event-to-road spatial join including mid-segment hits, the
 case-control fusion design, expanding-window label leakage, city-name snapping,
 provenance accounting, end-to-end CLI determinism, and the zero-dependency
 guarantee.
+
+Also covered: state/bbox resolution for a live fetch (both bbox orderings in
+circulation), Overpass and OSMnx replies converted to the engine's FeatureCollection
+without geopandas or shapely, window-cropping a fetch to a budget versus
+row-sampling it (which fragments the network), the offline cache contract,
+pre-computed slope rasters in degrees or percent, and the logging switch.
 """
 from __future__ import annotations
 
 import array
+import contextlib
 import datetime as dt
+import io
 import json
 import math
 import os
@@ -1364,6 +1372,819 @@ class TestZeroDependency(unittest.TestCase):
             self.assertIn("gdal_translate", str(cm.exception))
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+
+
+# --------------------------------------------------------------------------- #
+#  STATE / BBOX RESOLUTION  (--state, --bbox)
+# --------------------------------------------------------------------------- #
+class TestStateAndBbox(unittest.TestCase):
+    def test_every_ner_state_resolves_to_itself(self):
+        for st in D.NER_STATE_BOXES:
+            self.assertEqual(D.resolve_state(st), st)
+
+    def test_aliases_short_codes_and_case_all_resolve(self):
+        for alias, canon in (("Arunachal", "Arunachal Pradesh"),
+                             ("ARUNACHAL PRADESH", "Arunachal Pradesh"),
+                             ("mz", "Mizoram"), ("MZ", "Mizoram"),
+                             ("  tripura  ", "Tripura"),
+                             ("ap", "Arunachal Pradesh"),
+                             ("as", "Assam")):
+            self.assertEqual(D.resolve_state(alias), canon, alias)
+
+    def test_an_unknown_state_is_none_never_a_near_miss(self):
+        for bad in ("Bihar", "Kerala", "", None, "North East", "West Bengal"):
+            self.assertIsNone(D.resolve_state(bad), bad)
+
+    def test_state_boxes_are_well_formed_and_inside_the_ner(self):
+        for st, (w, s, e, n) in D.NER_STATE_BOXES.items():
+            self.assertLess(w, e, st)
+            self.assertLess(s, n, st)
+            self.assertTrue(85.0 <= w and e <= 100.0, f"{st} longitude {w},{e}")
+            self.assertTrue(20.0 <= s and n <= 32.0, f"{st} latitude {s},{n}")
+
+    def test_both_bbox_orderings_give_one_answer(self):
+        # S,W,N,E (Overpass / most GIS) and W,S,E,N (OSMnx) must not be
+        # confusable: the loader detects the ordering from the magnitudes
+        want = (91.5, 21.9, 93.5, 24.5)
+        self.assertEqual(D.parse_bbox("21.9,91.5,24.5,93.5"), want)   # S,W,N,E
+        self.assertEqual(D.parse_bbox("91.5,21.9,93.5,24.5"), want)   # W,S,E,N
+        self.assertEqual(D.parse_bbox([21.9, 91.5, 24.5, 93.5]), want)
+        self.assertEqual(D.parse_bbox((91.5, 21.9, 93.5, 24.5)), want)
+
+    def test_bbox_rejects_a_wrong_count(self):
+        for bad in ("21.9,91.5,24.5", "1,2,3,4,5", ""):
+            with self.assertRaises(ValueError, msg=bad):
+                D.parse_bbox(bad)
+
+    def test_bbox_rejects_reversed_corners_rather_than_swapping_them(self):
+        with self.assertRaises(ValueError) as cm:
+            D.parse_bbox("93.5,21.9,91.5,24.5")     # east < west
+        self.assertIn("empty box", str(cm.exception))
+
+    def test_bbox_rejects_a_box_bigger_than_any_ner_state(self):
+        # a whole-subcontinent box would pull hundreds of thousands of ways and
+        # then be silently cropped, so it is refused up front
+        with self.assertRaises(ValueError) as cm:
+            D.parse_bbox("8.0,68.0,37.0,97.0")
+        self.assertIn("larger than any NER state", str(cm.exception))
+
+    def test_bbox_rejects_out_of_range_coordinates(self):
+        for bad in ("21.9,911.5,24.5,93.5", "219.0,91.5,245.0,93.5"):
+            with self.assertRaises(ValueError, msg=bad):
+                D.parse_bbox(bad)
+
+
+# --------------------------------------------------------------------------- #
+#  LIVE ROAD FETCH  (Overpass / OSMnx -> engine GeoJSON)
+# --------------------------------------------------------------------------- #
+class _FakeLine:
+    """Stand-in for a shapely LineString: only `.coords` is read."""
+
+    def __init__(self, coords):
+        self.coords = coords
+
+
+class _FakeGraph:
+    """Stand-in for an OSMnx MultiDiGraph, so the converter can be tested
+    without geopandas, shapely, pyproj or osmnx installed."""
+
+    def __init__(self, nodes, edges):
+        self.nodes = nodes
+        self._edges = edges
+
+    def edges(self, keys=False, data=False):
+        assert keys and data
+        return iter(self._edges)
+
+    def number_of_nodes(self):
+        return len(self.nodes)
+
+    def number_of_edges(self):
+        return len(self._edges)
+
+
+class TestRoadFetchers(unittest.TestCase):
+    def test_overpass_reply_becomes_a_line_featurecollection(self):
+        doc = {"elements": [
+            {"type": "node", "id": 1, "lat": 23.7, "lon": 92.7},      # skipped
+            {"type": "relation", "id": 9},                             # skipped
+            {"type": "way", "id": 111, "tags": {"highway": "primary",
+                                                "name": "NH54",
+                                                "surface": "asphalt",
+                                                "tiger:county": "x"},   # dropped
+             "geometry": [{"lat": 23.70, "lon": 92.70},
+                          {"lat": 23.72, "lon": 92.75},
+                          {"lat": 23.75, "lon": 92.80}]},
+            {"type": "way", "id": 222, "tags": {"highway": "track"},
+             "geometry": [{"lat": 23.7, "lon": 92.7}]},                # <2 pts
+        ]}
+        gj = D.overpass_to_geojson(doc)
+        self.assertEqual(gj["type"], "FeatureCollection")
+        self.assertEqual(len(gj["features"]), 1)
+        f = gj["features"][0]
+        self.assertEqual(f["geometry"]["type"], "LineString")
+        # Overpass gives lat/lon objects; GeoJSON wants [lon, lat] arrays
+        self.assertEqual(f["geometry"]["coordinates"][0], [92.70, 23.70])
+        self.assertEqual(f["properties"]["highway"], "primary")
+        self.assertEqual(f["properties"]["name"], "NH54")
+        self.assertEqual(f["properties"]["osm_id"], 111)
+        self.assertNotIn("tiger:county", f["properties"])
+
+    def test_osmnx_conversion_needs_neither_geopandas_nor_shapely(self):
+        nodes = {1: {"x": 92.70, "y": 23.70}, 2: {"x": 92.75, "y": 23.72},
+                 3: {"x": 92.80, "y": 23.75}}
+        edges = [
+            (1, 2, 0, {"highway": "primary", "length": 5200.0, "osmid": 111,
+                       "name": "NH54"}),
+            (2, 3, 0, {"highway": ["secondary", "track"], "osmid": 222,
+                       "geometry": _FakeLine([(92.75, 23.72), (92.78, 23.74),
+                                              (92.80, 23.75)])}),
+        ]
+        gj = D.osmnx_to_geojson(_FakeGraph(nodes, edges))
+        self.assertEqual(len(gj["features"]), 2)
+        f0, f1 = gj["features"]
+        # a straight edge is rebuilt from its endpoint nodes
+        self.assertEqual(f0["geometry"]["coordinates"],
+                         [[92.70, 23.70], [92.75, 23.72]])
+        # a curved edge keeps every vertex, so length and slope stay honest
+        self.assertEqual(len(f1["geometry"]["coordinates"]), 3)
+        # OSMnx stores multi-valued tags as lists; the loader wants one scalar
+        self.assertEqual(f1["properties"]["highway"], "secondary")
+        self.assertEqual(f0["properties"]["length"], 5200.0)
+
+    def test_a_degenerate_osmnx_edge_is_skipped_not_emitted(self):
+        nodes = {1: {"x": 92.70, "y": 23.70}, 2: {"x": 92.75, "y": 23.72}}
+        edges = [(1, 2, 0, {"highway": "track",
+                            "geometry": _FakeLine([(92.70, 23.70)])})]
+        self.assertEqual(D.osmnx_to_geojson(_FakeGraph(nodes, edges))["features"],
+                         [])
+
+    def test_fetched_ways_load_into_the_engine_and_stay_connected(self):
+        # the whole point of the conversion: shared OSM node ids must survive as
+        # shared coordinates, or the loader rebuilds each way as its own island
+        nodes = {i: {"x": 92.70 + 0.05 * i, "y": 23.70 + 0.02 * i}
+                 for i in range(5)}
+        edges = [(i, i + 1, 0, {"highway": "primary", "osmid": 100 + i})
+                 for i in range(4)]
+        gj = D.osmnx_to_geojson(_FakeGraph(nodes, edges))
+        tmp = tempfile.mkdtemp(prefix="ing-ox-")
+        try:
+            p = os.path.join(tmp, "osm.geojson")
+            with open(p, "w") as fh:
+                json.dump(gj, fh)
+            g, info = D.roads_from_geojson(p, quiet=True)
+            self.assertEqual(len(g.edges), 4)
+            self.assertEqual(H._largest_component(g), len(g.nodes),
+                             "a fetched chain must be ONE component")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_osmnx_absent_raises_importerror_so_overpass_is_tried(self):
+        if D.osmnx() is not None:
+            self.skipTest("osmnx is installed")
+        with self.assertRaises(ImportError):
+            D.fetch_roads_osmnx((92.0, 23.0, 92.5, 23.5))
+
+
+# --------------------------------------------------------------------------- #
+#  CROPPING A FETCH TO A BUDGET
+# --------------------------------------------------------------------------- #
+def lattice(bbox=(92.0, 23.0, 92.8, 23.8), n=16):
+    """A connected lattice of OSM ways covering a bbox, ~5.5 km per cell."""
+    w, s, e, nn = bbox
+    step = (e - w) / n
+    feats = []
+    for i in range(n + 1):
+        for j in range(n):
+            y = s + i * (nn - s) / n
+            feats.append(line([[w + j * step, y], [w + (j + 1) * step, y]],
+                              highway="primary", osm_id=1000 + len(feats)))
+    for j in range(n + 1):
+        for i in range(n):
+            x = w + j * step
+            feats.append(line([[x, s + i * (nn - s) / n],
+                               [x, s + (i + 1) * (nn - s) / n]],
+                              highway="secondary", osm_id=5000 + len(feats)))
+    return {"type": "FeatureCollection", "features": feats}
+
+
+class TestCropToBudget(unittest.TestCase):
+    BBOX = (92.0, 23.0, 92.8, 23.8)
+
+    def _largest_fraction(self, gj):
+        tmp = tempfile.mkdtemp(prefix="ing-crop-")
+        try:
+            p = os.path.join(tmp, "g.geojson")
+            with open(p, "w") as fh:
+                json.dump(gj, fh)
+            g, _ = D.roads_from_geojson(p, quiet=True)
+            if not g.nodes:
+                return 0.0
+            return H._largest_component(g) / float(len(g.nodes))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_under_budget_is_returned_untouched(self):
+        gj = lattice(self.BBOX, n=4)
+        out, info = D.crop_to_budget(gj, self.BBOX, max_edges=10 ** 6)
+        self.assertFalse(info["cropped"])
+        self.assertIs(out, gj)
+
+    def test_zero_budget_means_unlimited(self):
+        gj = lattice(self.BBOX, n=4)
+        out, info = D.crop_to_budget(gj, self.BBOX, max_edges=0)
+        self.assertFalse(info["cropped"])
+        self.assertEqual(len(out["features"]), len(gj["features"]))
+
+    def test_cropping_keeps_the_network_connected_where_sampling_would_not(self):
+        gj = lattice(self.BBOX, n=16)
+        n = len(gj["features"])
+        budget = n // 8
+        cropped, info = D.crop_to_budget(gj, self.BBOX, budget)
+        self.assertTrue(info["cropped"])
+        self.assertLess(len(cropped["features"]), n)
+        self.assertGreater(len(cropped["features"]), 0)
+        # the window must be inside the request and centred on the inventory
+        w2, s2, e2, n2 = info["window"]
+        self.assertTrue(self.BBOX[0] - 1e-9 <= w2 < e2 <= self.BBOX[2] + 1e-9)
+        self.assertTrue(self.BBOX[1] - 1e-9 <= s2 < n2 <= self.BBOX[3] + 1e-9)
+
+        crop_frac = self._largest_fraction(cropped)
+        import random as _random
+        rng = _random.Random(0)
+        sampled = {"type": "FeatureCollection",
+                   "features": rng.sample(gj["features"], budget)}
+        sample_frac = self._largest_fraction(sampled)
+        # row-wise sampling is the obvious way to cap a network and it shreds
+        # it: every surviving way loses its neighbours, so routing reports NO
+        # PATH for every corridor while nothing raises an error
+        self.assertGreater(crop_frac, 0.90,
+                           f"cropped network fragmented: {crop_frac:.2f}")
+        self.assertGreater(crop_frac, sample_frac,
+                           f"crop {crop_frac:.2f} vs sample {sample_frac:.2f}")
+
+    def test_the_crop_centres_on_the_inventory_not_the_box_centre(self):
+        gj = lattice(self.BBOX, n=16)
+        budget = len(gj["features"]) // 8
+        _, info = D.crop_to_budget(gj, self.BBOX, budget, centre=(23.1, 92.1))
+        self.assertEqual(info["centre"], [23.1, 92.1])
+        w2, s2, e2, n2 = info["window"]
+        # the window must sit in the south-west corner, not the middle
+        self.assertLess(0.5 * (w2 + e2), 0.5 * (self.BBOX[0] + self.BBOX[2]))
+        self.assertLess(0.5 * (s2 + n2), 0.5 * (self.BBOX[1] + self.BBOX[3]))
+
+    def test_a_centre_outside_the_box_is_clamped_into_it(self):
+        gj = lattice(self.BBOX, n=8)
+        _, info = D.crop_to_budget(gj, self.BBOX, 10, centre=(80.0, 80.0))
+        clat, clon = info["centre"]
+        self.assertTrue(self.BBOX[1] <= clat <= self.BBOX[3])
+        self.assertTrue(self.BBOX[0] <= clon <= self.BBOX[2])
+
+    def test_inventory_centroid_is_a_median_so_outliers_cannot_move_it(self):
+        d = dt.date(2023, 7, 15)
+        evs = [D.Event(23.0 + 0.01 * i, 92.0 + 0.01 * i, d) for i in range(9)]
+        evs.append(D.Event(-33.9, 151.2, d))     # a valid but mistyped point
+        lat, lon = D.inventory_centroid(evs)
+        self.assertAlmostEqual(lat, 23.035, places=6)
+        self.assertAlmostEqual(lon, 92.045, places=6)
+        # the mean would have been dragged 5.7 degrees south by that one row
+        mean_lat = sum(e.lat for e in evs) / len(evs)
+        self.assertLess(abs(lat - 23.04), abs(mean_lat - 23.04))
+
+    def test_inventory_centroid_ignores_bad_and_missing_coordinates(self):
+        d = dt.date(2023, 7, 15)
+        self.assertIsNone(D.inventory_centroid([]))
+        self.assertIsNone(D.inventory_centroid([D.Event(None, None, d)]))
+        got = D.inventory_centroid([D.Event(999.0, 999.0, d),
+                                    D.Event(24.0, 93.0, d)])
+        self.assertEqual(got, (24.0, 93.0))
+
+
+# --------------------------------------------------------------------------- #
+#  acquire_roads: cache-first, offline-safe, honest about failure
+# --------------------------------------------------------------------------- #
+class TestAcquireRoads(unittest.TestCase):
+    BBOX = (92.0, 23.0, 92.8, 23.8)
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="ing-fetch-")
+        self._osmnx, self._overpass = D.fetch_roads_osmnx, D.fetch_roads_overpass
+        self._env = os.environ.pop("SIH_IGNORE_ROAD_CACHE", None)
+
+    def tearDown(self):
+        D.fetch_roads_osmnx, D.fetch_roads_overpass = self._osmnx, self._overpass
+        if self._env is not None:
+            os.environ["SIH_IGNORE_ROAD_CACHE"] = self._env
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _no_network(self, *a, **k):
+        raise AssertionError("the network must not be touched")
+
+    def test_a_cache_hit_never_touches_the_network(self):
+        cache = os.path.join(self.tmp, "osm.geojson")
+        gj = lattice(self.BBOX, n=4)
+        gj["metadata"] = {"bbox": list(self.BBOX)}
+        with open(cache, "w") as fh:
+            json.dump(gj, fh)
+        D.fetch_roads_osmnx = self._no_network
+        D.fetch_roads_overpass = self._no_network
+        path, info = D.acquire_roads(self.BBOX, cache_path=cache, offline=True,
+                                     quiet=True)
+        self.assertEqual(path, cache)
+        self.assertEqual(info["source"], "cache")
+        self.assertTrue(info["cache_matches_request"])
+        self.assertEqual(info["ways"], len(gj["features"]))
+
+    def test_offline_without_a_cache_fails_with_a_way_forward(self):
+        D.fetch_roads_osmnx = self._no_network
+        with self.assertRaises(RuntimeError) as cm:
+            D.acquire_roads(self.BBOX,
+                            cache_path=os.path.join(self.tmp, "missing.geojson"),
+                            offline=True, quiet=True)
+        msg = str(cm.exception)
+        self.assertIn("--offline", msg)
+        self.assertIn("--roads", msg)
+
+    def test_a_fetch_is_cached_so_the_next_run_is_offline(self):
+        gj = lattice(self.BBOX, n=4)
+        calls = []
+
+        def fake_osmnx(bbox, network_type="drive", simplify=True, quiet=False):
+            calls.append(bbox)
+            return gj
+
+        D.fetch_roads_osmnx = fake_osmnx
+        cache = os.path.join(self.tmp, "nested", "osm.geojson")
+        path, info = D.acquire_roads(self.BBOX, state="Mizoram",
+                                     cache_path=cache, quiet=True)
+        self.assertEqual(info["source"], "osmnx")
+        self.assertEqual(path, cache)
+        self.assertTrue(os.path.exists(cache))
+        self.assertEqual(len(calls), 1)
+
+        doc = jload(cache)
+        self.assertEqual(doc["metadata"]["state"], "Mizoram")
+        self.assertEqual(doc["metadata"]["bbox"], [round(v, 6) for v in self.BBOX])
+        self.assertIn("fetched", doc["metadata"])
+
+        # second run: offline, no fetch, same file
+        D.fetch_roads_osmnx = self._no_network
+        path2, info2 = D.acquire_roads(self.BBOX, cache_path=cache, offline=True,
+                                       quiet=True)
+        self.assertEqual(path2, cache)
+        self.assertEqual(info2["source"], "cache")
+
+    def test_osmnx_failure_falls_back_to_overpass(self):
+        gj = lattice(self.BBOX, n=4)
+
+        def boom(*a, **k):
+            raise RuntimeError("overpass-api.de rate limited us")
+
+        D.fetch_roads_osmnx = boom
+        D.fetch_roads_overpass = lambda bbox, network_type="drive", timeout=180, \
+            quiet=False: (gj, "https://overpass.kumi.systems/api/interpreter")
+        _, info = D.acquire_roads(self.BBOX,
+                                  cache_path=os.path.join(self.tmp, "o.geojson"),
+                                  quiet=True)
+        self.assertEqual(info["source"], "overpass")
+        self.assertIn("rate limited", info["osmnx_error"])
+
+    def test_an_empty_fetch_is_reported_not_silently_written(self):
+        D.fetch_roads_osmnx = lambda *a, **k: {"type": "FeatureCollection",
+                                               "features": []}
+        D.fetch_roads_overpass = lambda *a, **k: (
+            {"type": "FeatureCollection", "features": []}, "url")
+        with self.assertRaises(RuntimeError) as cm:
+            D.acquire_roads(self.BBOX,
+                            cache_path=os.path.join(self.tmp, "o.geojson"),
+                            quiet=True)
+        # the most common cause is a transposed bbox, so say so
+        self.assertIn("0 ways", str(cm.exception))
+        self.assertIn("S,W,N,E", str(cm.exception))
+
+    def test_a_cache_from_a_different_window_is_refetched(self):
+        cache = os.path.join(self.tmp, "osm.geojson")
+        other = (93.0, 24.0, 93.8, 24.8)
+        gj = lattice(other, n=4)
+        gj["metadata"] = {"bbox": list(other)}
+        with open(cache, "w") as fh:
+            json.dump(gj, fh)
+        fresh = lattice(self.BBOX, n=4)
+        D.fetch_roads_osmnx = lambda *a, **k: fresh
+        path, info = D.acquire_roads(self.BBOX, cache_path=cache, quiet=True)
+        self.assertEqual(info["source"], "osmnx")
+        self.assertEqual(info["stale_cache_refreshed_from"], list(other))
+        self.assertEqual(jload(path)["metadata"]["bbox"],
+                         [round(v, 6) for v in self.BBOX])
+
+    def test_offline_forces_a_mismatched_cache_and_says_so_loudly(self):
+        cache = os.path.join(self.tmp, "osm.geojson")
+        gj = lattice((93.0, 24.0, 93.8, 24.8), n=4)
+        gj["metadata"] = {"bbox": [93.0, 24.0, 93.8, 24.8]}
+        with open(cache, "w") as fh:
+            json.dump(gj, fh)
+        D.fetch_roads_osmnx = self._no_network
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            _, info = D.acquire_roads(self.BBOX, cache_path=cache, offline=True)
+        self.assertEqual(info["source"], "cache")
+        self.assertFalse(info["cache_matches_request"])
+        out = buf.getvalue()
+        self.assertIn("not the requested", out)
+        self.assertIn("--offline forces its use", out)
+
+    def test_max_edges_is_applied_to_a_fetch(self):
+        gj = lattice(self.BBOX, n=16)
+        D.fetch_roads_osmnx = lambda *a, **k: gj
+        _, info = D.acquire_roads(self.BBOX, max_edges=60,
+                                  cache_path=os.path.join(self.tmp, "o.geojson"),
+                                  quiet=True)
+        self.assertTrue(info["crop"]["cropped"])
+        self.assertLess(info["ways"], len(gj["features"]))
+
+
+# --------------------------------------------------------------------------- #
+#  --slope-tif: a pre-computed slope product, in degrees or percent
+# --------------------------------------------------------------------------- #
+def write_slope_asc(path, value, ncols=8, nrows=8, xll=92.0, yll=23.0,
+                    cell=0.1, nodata=-9999.0):
+    rows = [[value] * ncols for _ in range(nrows)]
+    write_asc(path, ncols, nrows, xll, yll, cell, rows, nodata=nodata)
+
+
+class TestSlopeRaster(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="ing-slope-")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _road(self, coords=((92.2, 23.3), (92.4, 23.5))):
+        p = os.path.join(self.tmp, "road.geojson")
+        write_geojson(p, [line([list(c) for c in coords], highway="primary")])
+        g, _ = D.roads_from_geojson(p, quiet=True)
+        self.assertEqual(len(g.edges), 1)
+        return g
+
+    def test_a_slope_product_in_degrees_is_read_as_degrees(self):
+        p = os.path.join(self.tmp, "slope30.asc")
+        write_slope_asc(p, 30.0)
+        info = D.classify_slope_raster(D.load_dem(p, quiet=True))
+        self.assertEqual(info["unit"], "degrees")
+        self.assertEqual(info["max"], 30.0)
+        self.assertGreater(info["samples"], 0)
+
+    def test_a_slope_product_in_percent_is_detected_as_percent(self):
+        p = os.path.join(self.tmp, "slope_pct.asc")
+        write_slope_asc(p, 150.0)          # 150% cannot be degrees
+        info = D.classify_slope_raster(D.load_dem(p, quiet=True))
+        self.assertEqual(info["unit"], "percent")
+
+    def test_a_nodata_sentinel_is_flagged_not_averaged_in(self):
+        p = os.path.join(self.tmp, "slope_nodata.asc")
+        write_slope_asc(p, -9999.0)
+        info = D.classify_slope_raster(D.load_dem(p, quiet=True))
+        # every cell is nodata, so nothing is readable at all
+        self.assertEqual(info["samples"], 0)
+        self.assertIn("no readable values", info.get("note", ""))
+
+    def test_percent_gradient_converts_through_atan_not_by_dividing(self):
+        # 100% gradient is 45 degrees; /100 would have said 1 degree
+        p = os.path.join(self.tmp, "slope100.asc")
+        write_slope_asc(p, 100.0)
+        raster = D.load_dem(p, quiet=True)
+        g = self._road()
+        info = D.enrich_graph_with_dem(g, None, None, slope_raster=raster,
+                                       quiet=True)
+        self.assertEqual(info["slope_raster"]["unit"], "percent")
+        self.assertAlmostEqual(g.edges[0].slope_deg, 45.0, places=1)
+        self.assertEqual(info["slope_raster_segments"], 1)
+
+    def test_a_degrees_raster_drives_slope_deg_with_no_dem_at_all(self):
+        p = os.path.join(self.tmp, "slope22.asc")
+        write_slope_asc(p, 22.0)
+        raster = D.load_dem(p, quiet=True)
+        g = self._road()
+        info = D.enrich_graph_with_dem(g, None, None, slope_raster=raster,
+                                       quiet=True)
+        self.assertEqual(info["dem_hits"], 0)
+        self.assertEqual(info["slope_raster_segments"], 1)
+        self.assertAlmostEqual(g.edges[0].slope_deg, 22.0, places=1)
+        self.assertAlmostEqual(info["slope_deg_mean"], 22.0, places=1)
+
+    def test_the_raster_takes_precedence_over_dem_derived_slope(self):
+        slope_p = os.path.join(self.tmp, "slope40.asc")
+        write_slope_asc(slope_p, 40.0)
+        dem_p = os.path.join(self.tmp, "flat_dem.asc")
+        # a near-flat DEM would derive ~0 degrees; the raster must win
+        write_asc(dem_p, 8, 8, 92.0, 23.0, 0.1,
+                  [[100 + (0 if j < 4 else 1) for j in range(8)]
+                   for _ in range(8)])
+        g = self._road()
+        info = D.enrich_graph_with_dem(g, D.load_dem(dem_p, quiet=True), None,
+                                       slope_raster=D.load_dem(slope_p, quiet=True),
+                                       quiet=True)
+        self.assertEqual(info["dem_hits"], 1, "elevation must still come from the DEM")
+        self.assertAlmostEqual(g.edges[0].slope_deg, 40.0, places=1)
+        self.assertAlmostEqual(g.edges[0].elevation_m, 100.5, places=1)
+
+    def test_a_raster_that_misses_every_segment_warns_instead_of_faking_it(self):
+        p = os.path.join(self.tmp, "far_away.asc")
+        write_slope_asc(p, 30.0, xll=80.0, yll=10.0)     # nowhere near the road
+        g = self._road()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            info = D.enrich_graph_with_dem(g, None, None,
+                                           slope_raster=D.load_dem(p, quiet=True))
+        self.assertEqual(info["slope_raster_hits"], 0)
+        self.assertEqual(info["slope_raster_segments"], 0)
+        self.assertIn("covered NONE of the segments", buf.getvalue())
+
+    def test_slope_tif_without_dem_says_what_stays_imputed(self):
+        p = os.path.join(self.tmp, "slope22.asc")
+        write_slope_asc(p, 22.0)
+        g = self._road()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            D.enrich_graph_with_dem(g, None, None,
+                                    slope_raster=D.load_dem(p, quiet=True))
+        self.assertIn("--slope-tif without --dem", buf.getvalue())
+        self.assertIn("elevation_m", buf.getvalue())
+
+
+# --------------------------------------------------------------------------- #
+#  logging output (--log-level / --log-file)
+# --------------------------------------------------------------------------- #
+class TestLoggingOutput(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="ing-log-")
+
+    def tearDown(self):
+        import logging
+        D._LOGGING_ON = False
+        # handlers must be CLOSED, not just dropped: a FileHandler left open
+        # trips ResourceWarning, and this suite is run with -W error
+        for h in list(D.log.handlers):
+            try:
+                h.close()
+            except Exception:
+                pass
+            D.log.removeHandler(h)
+        D.log.setLevel(logging.WARNING)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_default_output_is_plain_stdout_so_it_can_be_piped(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            D._log("  plain message")
+        self.assertEqual(buf.getvalue(), "  plain message\n")
+
+    def test_configure_logging_adds_timestamps_and_level(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            # StreamHandler captures sys.stdout at construction time, so the
+            # handler has to be built inside the redirect to be captured
+            D.configure_logging("INFO")
+            D._log("  routed message")
+            D._warn("  a warning")
+        out = buf.getvalue()
+        self.assertIn("routed message", out)
+        self.assertIn("INFO", out)
+        self.assertIn("WARNING", out)
+        self.assertRegex(out, r"\d\d:\d\d:\d\d \| ")
+
+    def test_log_file_is_written_and_directories_are_created(self):
+        lf = os.path.join(self.tmp, "deep", "nested", "ingest.log")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            # configure_logging always keeps a stdout handler alongside the file
+            D.configure_logging("INFO", lf)
+            D._log("  to file")
+        self.assertTrue(os.path.exists(lf))
+        self.assertIn("to file", jread(lf))
+        self.assertIn("to file", buf.getvalue())
+
+    def test_log_level_filters_below_the_threshold(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            D.configure_logging("ERROR")
+            D._log("  should be filtered")
+            D.log.error("  but errors pass")
+        out = buf.getvalue()
+        self.assertNotIn("should be filtered", out)
+        self.assertIn("but errors pass", out)
+
+    def test_quiet_still_suppresses_everything(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            D.configure_logging("INFO")
+            D._log("  silenced", quiet=True)
+            D._warn("  silenced too", quiet=True)
+            D._log("  not silenced")
+        out = buf.getvalue()
+        self.assertNotIn("silenced too", out)
+        self.assertEqual(out.count("  silenced"), 0)
+        self.assertIn("not silenced", out)
+
+    def test_optional_packages_reports_osmnx_presence(self):
+        self.assertIn("osmnx", D.HAS)
+        self.assertIsInstance(D.HAS["osmnx"], bool)
+        # presence is detected with find_spec, which must agree with importing
+        self.assertEqual(D.HAS["osmnx"], D.osmnx() is not None)
+
+
+# --------------------------------------------------------------------------- #
+#  THE COMMAND LINES FROM THE DOCS, END TO END
+# --------------------------------------------------------------------------- #
+def asc_covering(path, bbox, value, cell=0.02, cap=400):
+    """Write a constant-value ESRI .asc grid that fully covers a bbox."""
+    w, s, e, n = bbox
+    ncols = min(cap, max(4, int(math.ceil((e - w) / cell)) + 2))
+    nrows = min(cap, max(4, int(math.ceil((n - s) / cell)) + 2))
+    xll, yll = w - cell, s - cell
+    write_asc(path, ncols, nrows, xll, yll, cell,
+              [[value] * ncols for _ in range(nrows)])
+    return path
+
+
+class TestFetchCli(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="ing-cli-")
+        cls.fab = D.fabricate_demo_inputs(cls.tmp, seed=SEED, quiet=True)
+        cls.inventory = cls.fab["landslides"]
+        cls.roads = cls.fab["roads"]
+        # the fabricated file is a raw OSM-style FeatureCollection with no
+        # metadata block, so the extent has to be measured off the geometry
+        doc = jload(cls.roads)
+
+        def _pts(g):
+            if g["type"] == "LineString":
+                return g["coordinates"]
+            return [c for part in g["coordinates"] for c in part]
+
+        pts = [c for f in doc["features"] for c in _pts(f["geometry"])]
+        cls.bbox = (min(p[0] for p in pts), min(p[1] for p in pts),
+                    max(p[0] for p in pts), max(p[1] for p in pts))   # W,S,E,N
+        # a network on disk that looks exactly like a completed fetch
+        cls.cache = os.path.join(cls.tmp, "cached_fetch.geojson")
+        doc["metadata"] = {"crs": "EPSG:4326", "source": "overpass",
+                           "bbox": [round(v, 6) for v in cls.bbox],
+                           "state": None, "network_type": "drive"}
+        with open(cls.cache, "w") as fh:
+            json.dump(doc, fh)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def _run(self, args, expect=0, env=None):
+        e = dict(os.environ)
+        e.update(env or {})
+        r = subprocess.run([sys.executable, INGEST] + args, capture_output=True,
+                           text=True, timeout=900, cwd=ROOT, env=e)
+        self.assertEqual(r.returncode, expect,
+                         f"args={args}\n{r.stdout[-3000:]}\n{r.stderr[-3000:]}")
+        return r
+
+    def _out(self, name):
+        d = os.path.join(self.tmp, name)
+        os.makedirs(d, exist_ok=True)
+        return [os.path.join(d, "hazards.csv"), os.path.join(d, "roads.geojson"),
+                os.path.join(d, "report.json")]
+
+    # -- argument validation -------------------------------------------------
+    def test_unknown_state_exits_2_and_lists_the_known_ones(self):
+        r = self._run(["--state", "Bihar"], expect=2)
+        self.assertIn("unknown --state", r.stdout)
+        self.assertIn("Mizoram", r.stdout)
+        self.assertIn("Arunachal Pradesh", r.stdout)
+
+    def test_a_bad_bbox_exits_2_with_the_reason(self):
+        r = self._run(["--state", "Mizoram", "--bbox", "1,2,3"], expect=2)
+        self.assertIn("--bbox", r.stdout)
+        self.assertIn("expected 4 numbers", r.stdout)
+
+    def test_missing_everything_still_names_both_ways_to_supply_roads(self):
+        r = self._run(["--landslides", self.inventory], expect=2)
+        self.assertIn("--roads", r.stdout)
+        self.assertIn("--state/--bbox", r.stdout)
+
+    def test_offline_with_no_cache_exits_4_and_points_at_a_manual_download(self):
+        r = self._run(["--state", "Mizoram", "--offline",
+                       "--landslides", self.inventory,
+                       "--road-cache", os.path.join(self.tmp, "nope.geojson")],
+                      expect=4)
+        self.assertIn("could not obtain a road network", r.stdout)
+        self.assertIn("--roads", r.stdout)
+        self.assertNotIn("Traceback", r.stderr)
+
+    # -- the cache path ------------------------------------------------------
+    def test_a_cached_network_runs_the_whole_pipeline_offline(self):
+        csv_p, gj_p, rp_p = self._out("cache-hit")
+        w, s, e, n = self.bbox
+        r = self._run(["--bbox", f"{s},{w},{n},{e}",          # S,W,N,E on purpose
+                       "--offline", "--road-cache", self.cache,
+                       "--landslides", self.inventory,
+                       "--out", csv_p, "--graph-out", gj_p, "--report", rp_p])
+        self.assertIn("road cache", r.stdout)
+        prov = jload(rp_p)
+        fetch = prov["sources"]["roads"]["fetch"]
+        self.assertEqual(fetch["source"], "cache")
+        self.assertTrue(fetch["cache_matches_request"])
+        self.assertTrue(os.path.exists(csv_p))
+
+    def test_a_cache_from_another_window_is_used_offline_but_announced(self):
+        csv_p, gj_p, rp_p = self._out("cache-mismatch")
+        r = self._run(["--state", "Mizoram", "--offline",
+                       "--road-cache", self.cache,
+                       "--landslides", self.inventory,
+                       "--out", csv_p, "--graph-out", gj_p, "--report", rp_p])
+        # routing over another region's roads must never be silent
+        self.assertIn("not the requested", r.stdout)
+        prov = jload(rp_p)
+        self.assertFalse(prov["sources"]["roads"]["fetch"]["cache_matches_request"])
+        self.assertEqual(prov["sources"]["roads"]["fetch"]["state"], "Mizoram")
+
+    # -- --gsi-csv alias ----------------------------------------------------
+    def test_gsi_csv_is_an_alias_for_landslides(self):
+        csv_p, gj_p, rp_p = self._out("alias")
+        self._run(["--roads", self.cache, "--gsi-csv", self.inventory,
+                   "--out", csv_p, "--graph-out", gj_p, "--report", rp_p])
+        self.assertGreater(len(H.load_hazard_records(csv_p)), 100)
+
+    # -- the schema contract with the engine --------------------------------
+    def test_the_fused_table_gives_the_engine_nonzero_weather_features(self):
+        # the failure mode this guards: a table whose rain columns are named
+        # rainfall_mm_hr / api_3day loads without error, then every row's
+        # rain_mm_hr and api_3d come out 0.0 and the model trains blind to
+        # weather while reporting a healthy AUC
+        csv_p, gj_p, rp_p = self._out("schema")
+        self._run(["--roads", self.cache, "--landslides", self.inventory,
+                   "--dem", self.fab["dem"],
+                   "--rainfall", self.fab["rainfall"],
+                   "--moisture", self.fab["moisture"],
+                   "--out", csv_p, "--graph-out", gj_p, "--report", rp_p])
+        # the header must carry the ENGINE's column names, not near-misses: a
+        # table called rainfall_mm_hr / api_3day loads without complaint and
+        # then trains on zero rainfall
+        header = jread(csv_p).splitlines()[0].split(",")
+        for col in ("rain_mm_hr", "api_3d_mm", "slope_deg", "soil_saturation",
+                    "hist_freq_per_km", "length_m", "disrupted"):
+            self.assertIn(col, header)
+        rows = H.load_hazard_records(csv_p)
+        self.assertTrue(rows)
+        feats = [H.record_features(r) for r in rows]
+        names = list(H.FEATURES)
+        i_rain, i_api, i_slope, i_len = (names.index(k) for k in
+                                         ("rain_mm_hr", "api_3d", "slope_deg",
+                                          "length_m"))
+        for key, idx in (("rain_mm_hr", i_rain), ("api_3d", i_api),
+                         ("slope_deg", i_slope), ("length_m", i_len)):
+            nonzero = sum(1 for f in feats if f[idx] > 0)
+            self.assertGreater(nonzero, 0.5 * len(feats),
+                               f"{key} is zero for most rows - the column name "
+                               f"did not reach the engine")
+        # and the graph the engine reads back must be the same topology
+        g = H.RoadGraph.from_geojson(jload(gj_p))
+        self.assertGreater(len(g.edges), 50)
+        self.assertEqual(H._largest_component(g), len(g.nodes),
+                         "the emitted graph must stay ONE component")
+
+    # -- --slope-tif end to end ---------------------------------------------
+    def test_slope_tif_drives_slope_deg_and_is_recorded_in_provenance(self):
+        csv_p, gj_p, rp_p = self._out("slope")
+        slope_p = asc_covering(os.path.join(self.tmp, "slope33.asc"),
+                               self.bbox, 33.0)
+        self._run(["--roads", self.cache, "--landslides", self.inventory,
+                   "--slope-tif", slope_p,
+                   "--out", csv_p, "--graph-out", gj_p, "--report", rp_p])
+        prov = jload(rp_p)
+        self.assertIn("--slope-tif", prov["column_provenance"]["slope_deg"]["source"])
+        self.assertTrue(prov["column_provenance"]["slope_deg"]["real_data"])
+        g = H.RoadGraph.from_geojson(jload(gj_p))
+        covered = [e for e in g.edges if e.slope_deg == 33.0]
+        self.assertGreater(len(covered), 0.9 * len(g.edges),
+                           f"only {len(covered)}/{len(g.edges)} segments took the "
+                           f"raster value")
+
+    # -- logging ------------------------------------------------------------
+    def test_log_level_switches_to_timestamped_logging_and_still_finishes(self):
+        csv_p, gj_p, rp_p = self._out("logging")
+        logf = os.path.join(self.tmp, "run.log")
+        r = self._run(["--roads", self.cache, "--landslides", self.inventory,
+                       "--log-level", "INFO", "--log-file", logf,
+                       "--out", csv_p, "--graph-out", gj_p, "--report", rp_p])
+        self.assertRegex(r.stdout, r"\d\d:\d\d:\d\d \| INFO")
+        self.assertIn("fused training rows", r.stdout)
+        self.assertTrue(os.path.exists(logf))
+        self.assertIn("fused training rows", jread(logf))
+
+    def test_the_version_line_reports_the_live_fetch_backend(self):
+        r = self._run(["--version"])
+        self.assertIn("osmnx=", r.stdout)
+        self.assertIn("rasterio=", r.stdout)
 
 
 if __name__ == "__main__":

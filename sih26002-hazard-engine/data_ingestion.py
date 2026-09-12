@@ -9,19 +9,44 @@
  schema `hazard_prediction_engine.py` trains on:
 
    GSI Bhukosh / NGDR landslide inventory  ─┐
-   OSM / NESAC / Bhuvan road network       ─┤
+   OSM roads (fetched live, or a file)     ─┤
    SRTM / NASADEM / CartoDEM elevation     ─┼──►  data/historical_hazards_<year>.csv
-   SoilGrids 2.0 soil properties           ─┤     data/ner_roads.geojson
-   IMD / NESAC / NEDFI district rainfall   ─┤     outputs/ingestion_report.json
+   pre-computed slope rasters (opt.)       ─┤     data/ner_roads.geojson
+   SoilGrids 2.0 soil properties           ─┤     outputs/ingestion_report.json
+   IMD / NESAC / NEDFI district rainfall   ─┤
    ERA5-Land / SMAP soil moisture (opt.)   ─┘
+
+ PIPELINE STAGES
+ ---------------
+   1. Load and normalise the landslide inventory.  CSV / TSV / GeoJSON Points,
+      any of ~40 header spellings across Bhukosh, NGDR and NLSM exports.
+   2. Get the road network.  Either read a GeoJSON you already have, or fetch
+      one for a --state / --bbox: OSMnx when installed, otherwise the Overpass
+      API through urllib.  The result is cached, so only the first run needs
+      network access.
+   3. Enrich every segment from terrain: elevation, slope, relief, cut faces.
+      Slope comes from the DEM (Horn 3x3) or from a --slope-tif product, which
+      takes precedence; the unit is detected, since degrees and percent
+      gradient are both in circulation and look the same on disk.
+   4. Attach soil.  ISRIC SoilGrids 2.0 for texture, bulk density and water
+      retention (REST, cached to disk), plus ERA5-Land / SMAP for the moisture
+      state those properties are combined with.
+   5. Join the inventory onto the network and fuse one training table, with
+      weather matched per observation date and history counted only backwards
+      in time.
+   6. Emit the CSV, the enriched graph and a provenance report that says, per
+      column, whether it came from real data or from a documented fallback.
 
  DESIGN RULES (same as the engine)
  ---------------------------------
-   * Standard library only at the core.  `.hgt` and `.asc` DEMs, CSV inventories
-     and the SoilGrids REST API are all handled without numpy, rasterio,
-     geopandas, shapely or requests.  Those packages are used when present.
+   * Standard library only at the core.  `.hgt` and `.asc` DEMs, CSV
+     inventories, the SoilGrids REST API and the Overpass road fetch are all
+     handled without numpy, rasterio, geopandas, shapely, osmnx or requests.
+     Those packages are used when present, never required.
    * Offline-first.  Every network source has an on-disk cache and a CSV
-     fallback, so a demo never dies because a portal is down.
+     fallback, so a demo never dies because a portal is down.  `--offline`
+     makes that a hard promise: the run either uses caches or stops with an
+     explanation, and never dials out.
    * No label leakage.  Labels are case-control - a positive row sits ON its
      event date, so it carries the weather that actually accompanied the
      failure - and `hist_freq_per_km` for an observation on date D is built
@@ -31,9 +56,10 @@
 
  WHAT THIS MODULE DOES *NOT* DO
  ------------------------------
-   It cannot download from Bhukosh / NGDR / NEDFI for you - those portals sit
-   behind interactive sessions and registration.  DATASETS.md (next to this
-   file) says exactly what to fetch, in what format, and what to do when a
+   Roads it can fetch for you; inventories and rainfall it cannot.  Bhukosh,
+   NGDR, NLSM and the NEDFI databank sit behind interactive sessions and
+   registration, so there is no honest way to script them.  DATASETS.md (next to
+   this file) says exactly what to fetch, in what format, and what to do when a
    portal will not give you a clean export.  Once the files are on disk this
    module does everything else.
 
@@ -48,14 +74,27 @@
      #     and - for a road network - how many connected components it has
      python data_ingestion.py --inspect data/raw/ner_roads.geojson
 
-     # 2. fuse your own downloads
+     # 2. let it FETCH the roads for a state instead of supplying a file.
+     #    --bbox is read as S,W,N,E or W,S,E,N; the two are told apart by
+     #    magnitude so the conflicting conventions cannot be mixed up silently.
+     python data_ingestion.py --state Mizoram --bbox 21.9,91.5,24.5,93.5 \
+         --landslides data/raw/gsi_inventory.csv --train
+     python data_ingestion.py --state Assam --gsi-csv data/gsi_landslides.csv \
+         --dem data/raw/srtm/ --rainfall data/raw/imd_district_daily.csv
+
+     # 2b. fuse downloads you already have
      python data_ingestion.py \
          --roads    data/raw/ner_roads.geojson \
          --landslides data/raw/gsi_inventory.csv \
          --dem      data/raw/srtm/ \
+         --slope-tif data/raw/aster_slope.tif \
          --rainfall data/raw/imd_district_daily.csv \
          --soil     online \
          --out      data/historical_hazards_2023.csv
+
+     # 2c. re-run a previous fetch with no network at all
+     python data_ingestion.py --state Mizoram --offline \
+         --landslides data/raw/gsi_inventory.csv --log-level INFO
 
      # 3. train the engine on the fused table
      python hazard_prediction_engine.py \
@@ -74,8 +113,10 @@ import array
 import csv
 import datetime as _dt
 import gzip
+import importlib.util
 import io
 import json
+import logging
 import math
 import os
 import random
@@ -113,11 +154,80 @@ def _probe(name: str):
 np = _probe("numpy")
 rasterio = _probe("rasterio")
 
-HAS = {"numpy": np is not None, "rasterio": rasterio is not None}
+def _available(name: str) -> bool:
+    """Is a package importable?  find_spec does not execute it."""
+    try:
+        return importlib.util.find_spec(name) is not None
+    except Exception:
+        return False
+
+
+# osmnx is deliberately NOT imported here: it drags in geopandas, shapely,
+# networkx and pyproj and costs several seconds, which would be paid on every
+# run even when the roads come from a file on disk.  Presence is detected with
+# find_spec (no execution) and the import happens on first use.
+_osmnx_mod: Any = "unset"
+
+HAS = {"numpy": np is not None, "rasterio": rasterio is not None,
+       "osmnx": _available("osmnx")}
+
+
+def osmnx():
+    """Import osmnx on first use, or return None if it is absent."""
+    global _osmnx_mod
+    if _osmnx_mod == "unset":
+        _osmnx_mod = _probe("osmnx")
+        HAS["osmnx"] = _osmnx_mod is not None
+    return _osmnx_mod
+
+
+# --------------------------------------------------------------------------- #
+#  PROGRESS OUTPUT - plain stdout by default, `logging` on request
+# --------------------------------------------------------------------------- #
+# The default is print() so the pipeline's output can be piped, diffed and
+# grepped without a timestamp prefix on every line.  `--log-level` / `--log-file`
+# switch the same messages over to the logging module, which adds timestamps and
+# separates warnings from progress.
+log = logging.getLogger("ingestion")
+_LOGGING_ON = False
+
+
+def configure_logging(level: str = "INFO",
+                      logfile: Optional[str] = None) -> None:
+    """Route every progress message through the `logging` module."""
+    global _LOGGING_ON
+    handlers: List[logging.Handler] = [logging.StreamHandler(sys.stdout)]
+    if logfile:
+        d = os.path.dirname(os.path.abspath(logfile))
+        if d:
+            os.makedirs(d, exist_ok=True)
+        handlers.append(logging.FileHandler(logfile, encoding="utf-8"))
+    fmt = logging.Formatter("%(asctime)s | %(levelname)-7s | %(message)s",
+                            "%H:%M:%S")
+    for h in handlers:
+        h.setFormatter(fmt)
+    log.handlers = handlers
+    log.setLevel(getattr(logging, str(level).upper(), logging.INFO))
+    log.propagate = False
+    _LOGGING_ON = True
 
 
 def _log(msg: str, quiet: bool = False) -> None:
-    if not quiet:
+    if quiet:
+        return
+    if _LOGGING_ON:
+        log.info(msg.rstrip())
+    else:
+        print(msg, flush=True)
+
+
+def _warn(msg: str, quiet: bool = False) -> None:
+    """A problem the user must see, but which does not abort the run."""
+    if quiet:
+        return
+    if _LOGGING_ON:
+        log.warning(msg.rstrip())
+    else:
         print(msg, flush=True)
 
 
@@ -902,6 +1012,391 @@ def state_of(lat: float, lon: float) -> str:
     return "North East"
 
 
+# Accepted spellings for --state, normalised through _norm_key.  The canonical
+# names above are what lands in the fused CSV's `state` column; these are what
+# people actually type on a command line.
+STATE_ALIASES: Dict[str, str] = {
+    "arunachal": "Arunachal Pradesh",
+    "arunachalpradesh": "Arunachal Pradesh",
+    "ap": "Arunachal Pradesh",
+    "ar": "Arunachal Pradesh",
+    "assam": "Assam",
+    "as": "Assam",
+    "meghalaya": "Meghalaya",
+    "ml": "Meghalaya",
+    "nagaland": "Nagaland",
+    "nl": "Nagaland",
+    "manipur": "Manipur",
+    "mn": "Manipur",
+    "mizoram": "Mizoram",
+    "mz": "Mizoram",
+    "tripura": "Tripura",
+    "tr": "Tripura",
+    "sikkim": "Sikkim",
+    "sk": "Sikkim",
+}
+
+
+def resolve_state(name: Any) -> Optional[str]:
+    """Map any spelling of a NER state onto its canonical name, or None."""
+    if name is None:
+        return None
+    key = _norm_key(name)
+    for st in NER_STATE_BOXES:
+        if _norm_key(st) == key:
+            return st
+    return STATE_ALIASES.get(key)
+
+
+def parse_bbox(spec: Any) -> Tuple[float, float, float, float]:
+    """Parse a `--bbox` string into (west, south, east, north).
+
+    The two orderings in circulation disagree: Overpass and most GIS tools use
+    S,W,N,E while OSMnx's `graph_from_bbox` uses W,S,E,N.  Rather than pick one
+    and silently mis-read the other, the ordering is detected from the values -
+    in the NER longitudes are 88-98 and latitudes 21-30, so any magnitude above
+    60 can only be a longitude.  Outside that range the documented S,W,N,E
+    order is assumed.
+    """
+    if isinstance(spec, (tuple, list)):
+        vals = [float(v) for v in spec]
+    else:
+        vals = [float(x) for x in str(spec).replace(";", ",").split(",")
+                if str(x).strip()]
+    if len(vals) != 4:
+        raise ValueError(f"expected 4 numbers, got {len(vals)}: {spec!r}")
+    a, b, c, d = vals
+
+    if a > 60.0 and c > 60.0:          # W,S,E,N  (OSMnx order)
+        order, w, s_, e, nn = "W,S,E,N", a, b, c, d
+    elif b > 60.0 and d > 60.0:        # S,W,N,E  (Overpass / GIS order)
+        order, w, s_, e, nn = "S,W,N,E", b, a, d, c
+    else:
+        order, w, s_, e, nn = "S,W,N,E", b, a, d, c
+    for v in vals:
+        if not (-180.0 <= v <= 180.0):
+            raise ValueError(f"{v} is not a valid latitude or longitude")
+    if not (-90.0 <= s_ <= 90.0 and -90.0 <= nn <= 90.0):
+        raise ValueError(f"latitudes {s_},{nn} outside -90..90 - did you swap "
+                         f"the order? read as {order}")
+    if not (-180.0 <= w <= 180.0 and -180.0 <= e <= 180.0):
+        raise ValueError(f"longitudes {w},{e} outside -180..180")
+    if w >= e or s_ >= nn:
+        raise ValueError(f"empty box: west {w} must be < east {e} and south "
+                         f"{s_} < north {nn} (read as {order})")
+    if nn - s_ > 6.0 or e - w > 8.0:
+        raise ValueError(f"box spans {nn - s_:.1f} deg of latitude and "
+                         f"{e - w:.1f} deg of longitude - that is far larger "
+                         f"than any NER state and will pull hundreds of "
+                         f"thousands of OSM ways. Narrow it, or raise "
+                         f"--max-edges knowingly.")
+    return (w, s_, e, nn)
+
+
+def inventory_centroid(events: Sequence["Event"]
+                       ) -> Optional[Tuple[float, float]]:
+    """Median lat/lon of an inventory - where to centre a cropped road fetch.
+
+    A state box can be 500 km across (Assam) while the landslides sit in one
+    district.  Cropping a fetch around the box centre would return roads with no
+    events anywhere near them; cropping around the inventory returns the roads
+    the labels actually describe.  The median, not the mean, so a handful of
+    mistyped coordinates cannot drag the window off the region.
+    """
+    pts = [(ev.lat, ev.lon) for ev in events
+           if ev.lat is not None and ev.lon is not None
+           and -90.0 <= ev.lat <= 90.0 and -180.0 <= ev.lon <= 180.0]
+    if not pts:
+        return None
+    lats = sorted(p[0] for p in pts)
+    lons = sorted(p[1] for p in pts)
+    m = len(lats) // 2
+    mid = (lambda v: v[m] if len(v) % 2 else 0.5 * (v[m - 1] + v[m]))
+    return (mid(lats), mid(lons))
+
+
+# --------------------------------------------------------------------------- #
+#  LIVE ROAD FETCH  (OSMnx if installed, else Overpass through urllib)
+# --------------------------------------------------------------------------- #
+OVERPASS_ENDPOINTS = (
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.private.coffee/api/interpreter",
+)
+
+# drivable ways only - matches OSMnx network_type="drive" closely enough that
+# the two fetch paths produce comparable networks
+DRIVE_HIGHWAYS = ("motorway", "motorway_link", "trunk", "trunk_link",
+                  "primary", "primary_link", "secondary", "secondary_link",
+                  "tertiary", "tertiary_link", "unclassified", "residential")
+ALL_HIGHWAYS = DRIVE_HIGHWAYS + ("service", "track", "living_street",
+                                 "pedestrian", "road")
+
+# OSM tags worth carrying into the GeoJSON; everything else is dropped so the
+# cached file stays small and the loader's tag handling stays the single place
+# that interprets them.
+KEEP_OSM_TAGS = ("highway", "surface", "lanes", "maxspeed", "name", "ref",
+                 "cutting", "embankment", "bridge", "tunnel", "width", "lit",
+                 "tracktype", "sac_scale", "oneway", "access", "service")
+
+
+def overpass_to_geojson(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Turn an Overpass `out geom;` reply into a LineString FeatureCollection.
+
+    `out geom;` inlines the full vertex list on each way, so this needs no node
+    lookup pass and no second query - which matters because Overpass rate-limits
+    hard.
+    """
+    feats: List[Dict[str, Any]] = []
+    for el in doc.get("elements", []):
+        if el.get("type") != "way":
+            continue
+        geom = el.get("geometry") or []
+        coords = [[float(p["lon"]), float(p["lat"])] for p in geom
+                  if "lat" in p and "lon" in p]
+        if len(coords) < 2:
+            continue
+        tags = el.get("tags") or {}
+        props = {k: tags[k] for k in KEEP_OSM_TAGS if k in tags}
+        props["osm_id"] = el.get("id")
+        feats.append({"type": "Feature", "id": f"way/{el.get('id')}",
+                      "properties": props,
+                      "geometry": {"type": "LineString", "coordinates": coords}})
+    return {"type": "FeatureCollection", "features": feats}
+
+
+def fetch_roads_overpass(bbox: Tuple[float, float, float, float],
+                         network_type: str = "drive", timeout: int = 180,
+                         quiet: bool = False) -> Tuple[Dict[str, Any], str]:
+    """Fetch drivable OSM ways for a bbox using only the standard library."""
+    w, s_, e, nn = bbox
+    hw = "|".join(DRIVE_HIGHWAYS if network_type == "drive" else ALL_HIGHWAYS)
+    query = (f'[out:json][timeout:{int(timeout)}];'
+             f'way["highway"~"^({hw})$"]({s_},{w},{nn},{e});'
+             f'out geom;')
+    last: Optional[Exception] = None
+    for url in OVERPASS_ENDPOINTS:
+        try:
+            req = urllib.request.Request(
+                url, data=query.encode("utf-8"),
+                headers={"User-Agent": "SIH26002-ingestion/1.0 (research)",
+                         "Content-Type": "application/x-www-form-urlencoded"})
+            with urllib.request.urlopen(req, timeout=timeout + 30) as resp:
+                doc = json.loads(resp.read().decode("utf-8"))
+            gj = overpass_to_geojson(doc)
+            _log(f"    Overpass            : {url} -> {len(gj['features'])} ways",
+                 quiet)
+            return gj, url
+        except Exception as exc:                       # noqa: BLE001
+            last = exc
+            _warn(f"    Overpass {url.split('/')[2]} failed: {exc}", quiet)
+    raise RuntimeError(f"all Overpass endpoints failed (last: {last})")
+
+
+def _flat(v: Any) -> Any:
+    """OSMnx stores multi-valued tags as lists; the loader wants one scalar."""
+    if isinstance(v, (list, tuple)):
+        return v[0] if v else None
+    return v
+
+
+def osmnx_to_geojson(G: Any) -> Dict[str, Any]:
+    """Convert an OSMnx MultiDiGraph to a FeatureCollection WITHOUT geopandas.
+
+    `ox.graph_to_geojson` does not exist in any released version, and the
+    documented route (`ox.convert.graph_to_gdfs` then `gdf.to_file`) needs
+    geopandas and pyogrio.  Reading the graph directly needs neither, keeps the
+    `key` of parallel edges, and preserves OSM connectivity - two ways that meet
+    at a node keep that node's OSM id on both ends, which is what stops the
+    loader from splitting them into separate components.
+    """
+    feats: List[Dict[str, Any]] = []
+    for u, v, _k, d in G.edges(keys=True, data=True):
+        un, vn = G.nodes[u], G.nodes[v]
+        geom = d.get("geometry")
+        if geom is None:
+            coords = [[float(un["x"]), float(un["y"])],
+                      [float(vn["x"]), float(vn["y"])]]
+        else:
+            coords = [[float(c[0]), float(c[1])] for c in geom.coords]
+        if len(coords) < 2:
+            continue
+        props = {t: _flat(d[t]) for t in KEEP_OSM_TAGS if t in d}
+        props["osm_id"] = _flat(d.get("osmid"))
+        props["length"] = float(d.get("length") or 0.0)
+        feats.append({"type": "Feature", "id": f"way/{props['osm_id']}",
+                      "properties": props,
+                      "geometry": {"type": "LineString", "coordinates": coords}})
+    return {"type": "FeatureCollection", "features": feats}
+
+
+def fetch_roads_osmnx(bbox: Tuple[float, float, float, float],
+                      network_type: str = "drive", simplify: bool = True,
+                      quiet: bool = False) -> Dict[str, Any]:
+    """Fetch a road graph with OSMnx.  Raises ImportError when it is absent."""
+    ox = osmnx()
+    if ox is None:
+        raise ImportError("osmnx is not installed")
+    w, s_, e, nn = bbox
+    _log(f"    OSMnx               : fetching {network_type} network for "
+         f"bbox ({w},{s_},{e},{nn}) ...", quiet)
+    try:
+        # OSMnx >= 1.9: bbox=(west, south, east, north)
+        G = ox.graph_from_bbox(bbox=(w, s_, e, nn), network_type=network_type,
+                               simplify=simplify)
+    except TypeError:
+        # OSMnx <= 1.8: positional north, south, east, west
+        G = ox.graph_from_bbox(nn, s_, e, w, network_type=network_type,
+                               simplify=simplify)
+    gj = osmnx_to_geojson(G)
+    _log(f"    OSMnx               : {G.number_of_nodes()} nodes / "
+         f"{G.number_of_edges()} edges -> {len(gj['features'])} ways", quiet)
+    return gj
+
+
+def crop_to_budget(gj: Dict[str, Any], bbox: Tuple[float, float, float, float],
+                   max_edges: int,
+                   centre: Optional[Tuple[float, float]] = None
+                   ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Shrink the fetch window until the way count fits `max_edges`.
+
+    Cropping geometrically rather than sampling rows.  `edges.sample(n)` - the
+    obvious way to cap a network - picks ways at random, so almost every
+    surviving way loses its neighbours and the "network" becomes thousands of
+    two-node islands: routing then reports NO PATH for every corridor while
+    nothing anywhere raises an error.  Keeping a smaller *window* keeps the ways
+    inside it connected to each other.
+    """
+    feats = gj.get("features", [])
+    info: Dict[str, Any] = {"cropped": False, "ways_before": len(feats),
+                            "ways_after": len(feats), "window": list(bbox)}
+    if not max_edges or max_edges <= 0 or len(feats) <= max_edges:
+        return gj, info
+    w, s_, e, nn = bbox
+    clat, clon = centre if centre else (0.5 * (s_ + nn), 0.5 * (w + e))
+    clat = min(max(clat, s_), nn)
+    clon = min(max(clon, w), e)
+    # area scales with the square of the linear shrink, so f = sqrt(budget/n)
+    f = math.sqrt(float(max_edges) / float(len(feats)))
+    hw, hh = 0.5 * (e - w) * f, 0.5 * (nn - s_) * f
+    w2, e2 = max(w, clon - hw), min(e, clon + hw)
+    s2, n2 = max(s_, clat - hh), min(nn, clat + hh)
+    kept = []
+    for ft in feats:
+        coords = (ft.get("geometry") or {}).get("coordinates") or []
+        if not coords:
+            continue
+        lats = [c[1] for c in coords]
+        lons = [c[0] for c in coords]
+        if min(lats) >= s2 and max(lats) <= n2 and min(lons) >= w2 \
+                and max(lons) <= e2:
+            kept.append(ft)
+    info.update({"cropped": True, "ways_after": len(kept),
+                 "window": [round(v, 4) for v in (w2, s2, e2, n2)],
+                 "centre": [round(clat, 4), round(clon, 4)],
+                 "note": "window shrunk around the inventory centroid; ways "
+                         "crossing the new boundary are dropped whole"})
+    return {"type": "FeatureCollection", "features": kept}, info
+
+
+def acquire_roads(bbox: Tuple[float, float, float, float],
+                  state: Optional[str] = None, network_type: str = "drive",
+                  max_edges: int = 4000, cache_path: Optional[str] = None,
+                  offline: bool = False, quiet: bool = False,
+                  overpass_timeout: int = 180,
+                  centre: Optional[Tuple[float, float]] = None
+                  ) -> Tuple[str, Dict[str, Any]]:
+    """Get a road network GeoJSON for a bbox: cache, else OSMnx, else Overpass.
+
+    Returns (path, info).  The result is always written to `cache_path` so the
+    next run is offline - an OSM fetch of a whole state takes minutes and is
+    rate-limited, and a demo must not die because a mirror is down.
+    """
+    info: Dict[str, Any] = {"bbox": [round(v, 4) for v in bbox],
+                            "state": state, "network_type": network_type,
+                            "source": None, "cache": cache_path,
+                            "max_edges": max_edges}
+    if cache_path and os.path.exists(cache_path) and not os.environ.get(
+            "SIH_IGNORE_ROAD_CACHE"):
+        doc = _read_json(cache_path)
+        cached_bbox = (doc.get("metadata") or {}).get("bbox")
+        n_feat = len(doc.get("features", []))
+        matches = (isinstance(cached_bbox, (list, tuple))
+                   and len(cached_bbox) == 4
+                   and all(abs(float(a) - float(b)) < 1e-6
+                           for a, b in zip(cached_bbox, bbox)))
+        if matches or offline:
+            info.update({"source": "cache", "ways": n_feat,
+                         "cached_bbox": cached_bbox,
+                         "cache_matches_request": matches})
+            _log(f"    road cache          : {cache_path} ({n_feat} ways, "
+                 f"offline)", quiet)
+            if not matches:
+                # --offline forbids a re-fetch, so say loudly that the roads are
+                # from a different window: routing over another state's network
+                # produces plausible numbers that no metric would flag
+                _warn(f"    ! that cache was fetched for bbox {cached_bbox}, not "
+                      f"the requested {[round(v, 3) for v in bbox]}. --offline "
+                      f"forces its use; drop --offline or delete the file to "
+                      f"re-fetch.", quiet)
+            return cache_path, info
+        _warn(f"    road cache          : {cache_path} was fetched for bbox "
+              f"{cached_bbox}, not {[round(v, 3) for v in bbox]} - re-fetching",
+              quiet)
+        info["stale_cache_refreshed_from"] = cached_bbox
+    if offline:
+        raise RuntimeError(
+            f"--offline was given but there is no cached road network at "
+            f"{cache_path}. Fetch it once with network access, or pass --roads.")
+
+    gj: Optional[Dict[str, Any]] = None
+    try:
+        gj = fetch_roads_osmnx(bbox, network_type=network_type, quiet=quiet)
+        info["source"] = "osmnx"
+    except ImportError:
+        _log("    OSMnx               : not installed - using the Overpass API "
+             "instead (stdlib only)", quiet)
+    except Exception as exc:                           # noqa: BLE001
+        _warn(f"    OSMnx               : failed ({exc}) - falling back to "
+              f"Overpass", quiet)
+        info["osmnx_error"] = str(exc)
+    if gj is None:
+        gj, url = fetch_roads_overpass(bbox, network_type=network_type,
+                                       timeout=overpass_timeout, quiet=quiet)
+        info["source"] = info.get("source") or "overpass"
+        info["endpoint"] = url
+
+    if not gj.get("features"):
+        raise RuntimeError(
+            f"the fetch returned 0 ways for bbox {info['bbox']}. Either the box "
+            f"is empty (check that --bbox was not given as W,S,E,N when you "
+            f"meant S,W,N,E - this loader accepts both) or the highway filter "
+            f"matched nothing there.")
+
+    gj, crop = crop_to_budget(gj, bbox, max_edges, centre=centre)
+    info["crop"] = crop
+    info["ways"] = len(gj["features"])
+    if crop.get("cropped"):
+        _warn(f"    crop                : {crop['ways_before']} ways exceeds "
+              f"--max-edges {max_edges}; window shrunk to "
+              f"{crop['window']} around {crop.get('centre')} keeping "
+              f"{crop['ways_after']} ways (raise --max-edges for more, "
+              f"0 = unlimited)", quiet)
+
+    out = cache_path or os.path.join(CACHE_DIR, "osm_roads.geojson")
+    os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
+    gj["metadata"] = {"crs": "EPSG:4326", "source": info["source"],
+                      "fetched": _dt.datetime.now().isoformat(timespec="seconds"),
+                      "bbox": [round(v, 6) for v in bbox],
+                      "window": crop.get("window"), "state": state,
+                      "network_type": network_type,
+                      "generator": f"data_ingestion {__version__}"}
+    with open(out, "w", encoding="utf-8") as fh:
+        json.dump(gj, fh)
+    _log(f"    roads fetched       : {info['ways']} ways -> {out}", quiet)
+    return out, info
+
+
 HIGHWAY_SPEED = {"motorway": 80.0, "trunk": 70.0, "primary": 55.0,
                  "secondary": 45.0, "tertiary": 35.0, "unclassified": 30.0,
                  "residential": 25.0, "service": 20.0, "track": 18.0}
@@ -1414,13 +1909,70 @@ def _point_to_segment_m(plat: float, plon: float, alat: float, alon: float,
 # --------------------------------------------------------------------------- #
 #  FEATURE ENRICHMENT
 # --------------------------------------------------------------------------- #
+def classify_slope_raster(raster: DemMosaic, samples: int = 24) -> Dict[str, Any]:
+    """Decide whether a slope product is in degrees or percent gradient.
+
+    Both are in circulation and they are not distinguishable from the filename:
+    GDAL's `gdaldem slope` defaults to degrees but `-p` gives percent, QGIS's
+    raster terrain analysis offers both, and ASTER-derived products vary by
+    agency.  Reading percent as degrees inflates every slope roughly tenfold and
+    the model still trains happily on it - it just learns a feature nobody can
+    interpret, and any threshold calibrated in degrees (the `slope_deg >= 12`
+    cut-slope rule) fires everywhere.  Slope in degrees cannot exceed 90, so
+    anything above that is percent.
+    """
+    w, s_, e, nn = raster.bbox()
+    vals: List[float] = []
+    for i in range(samples):
+        for j in range(samples):
+            v = raster.elevation(s_ + (nn - s_) * (i + 0.5) / samples,
+                                 w + (e - w) * (j + 0.5) / samples)
+            if v is not None:
+                vals.append(float(v))
+    if not vals:
+        return {"samples": 0, "unit": "degrees", "min": None, "max": None,
+                "mean": None, "note": "raster returned no readable values"}
+    vs = sorted(vals)
+    vmax, vmin = vs[-1], vs[0]
+    mean = sum(vs) / len(vs)
+    p99 = vs[min(int(0.99 * len(vs)), len(vs) - 1)]
+    unit = "percent" if max(vmax, p99) > 90.0 else "degrees"
+    out: Dict[str, Any] = {"samples": len(vs), "unit": unit,
+                           "min": round(vmin, 2), "max": round(vmax, 2),
+                           "mean": round(mean, 2), "p99": round(p99, 2)}
+    if vmin < -1.0:
+        out["note"] = (f"minimum {vmin} looks like a nodata sentinel, not a "
+                       f"slope; those cells are skipped per sample, but check "
+                       f"the product's nodata value")
+    return out
+
+
 def enrich_graph_with_dem(graph: hpe.RoadGraph, dem: Optional[DemMosaic],
                           ndvi: Optional[DemMosaic] = None,
+                          slope_raster: Optional[DemMosaic] = None,
                           quiet: bool = False) -> Dict[str, Any]:
-    """Sample elevation, effective slope, relief, cut-slope and NDVI per segment."""
+    """Sample elevation, effective slope, relief, cut-slope and NDVI per segment.
+
+    `slope_raster` is an optional PRE-COMPUTED slope surface (GDAL/QGIS/ASTER
+    derivative) in degrees or percent.  When supplied it takes precedence over
+    slope derived from the DEM here, because an agency slope product was usually
+    computed on a hydrologically conditioned DEM at full resolution, whereas
+    deriving it in-process resamples the same DEM at the road's own vertices.
+    """
+    slope_pct = False
+    slope_raster_info: Dict[str, Any] = {}
+    if slope_raster is not None:
+        slope_raster_info = classify_slope_raster(slope_raster)
+        slope_pct = slope_raster_info.get("unit") == "percent"
+        _log(f"  slope raster          : {slope_raster_info.get('samples')} "
+             f"samples, range {slope_raster_info.get('min')}.."
+             f"{slope_raster_info.get('max')} -> read as "
+             f"{slope_raster_info.get('unit')}", quiet)
     info = {"dem_hits": 0, "dem_misses": 0, "ndvi_hits": 0,
             "slope_deg_mean": None, "slope_deg_p90": None,
-            "cut_slope_pct": None, "relief_mean_m": None}
+            "cut_slope_pct": None, "relief_mean_m": None,
+            "slope_raster_hits": 0, "slope_raster_segments": 0,
+            "slope_raster": slope_raster_info or None}
     slopes: List[float] = []
     cut = 0
     reliefs: List[float] = []
@@ -1432,50 +1984,64 @@ def enrich_graph_with_dem(graph: hpe.RoadGraph, dem: Optional[DemMosaic],
             pts = [(lat, lon)]
         elevs, sl, rel = [], [], []
         for plat, plon in pts:
+            if slope_raster is not None:
+                sv = slope_raster.elevation(plat, plon)
+                if sv is not None and float(sv) >= 0.0:
+                    # percent gradient converts through atan, it is not scaled:
+                    # 100% is 45 deg, so dividing by 100 would be wrong by 45x
+                    sl.append(math.degrees(math.atan(float(sv) / 100.0))
+                              if slope_pct else float(sv))
+                    info["slope_raster_hits"] += 1
             if dem is not None:
                 hv = dem.elevation(plat, plon)
-                sv = dem.slope_deg(plat, plon)
                 rv = dem.relief_m(plat, plon, radius_px=3)
                 if hv is not None:
                     elevs.append(hv)
-                if sv is not None:
-                    sl.append(sv)
                 if rv is not None:
                     rel.append(rv)
+                if slope_raster is None:
+                    sv = dem.slope_deg(plat, plon)
+                    if sv is not None:
+                        sl.append(sv)
         if elevs:
             info["dem_hits"] += 1
             e.elev_from = round(elevs[0], 1)
             e.elev_to = round(elevs[-1], 1)
             e.elevation_m = round(sum(elevs) / len(elevs), 1)
-            rise = abs(elevs[-1] - elevs[0])
-            e.grade_pct = round(100.0 * rise / max(e.length_m, 1.0), 3)
-            # effective slope: 85th percentile of the sampled terrain gradient,
-            # which captures the steepest bit a convoy must actually cross
-            if sl:
-                sl_sorted = sorted(sl)
-                e.slope_deg = round(sl_sorted[min(int(0.85 * len(sl_sorted)),
-                                                  len(sl_sorted) - 1)], 2)
-                slopes.append(e.slope_deg)
-                info["slope_deg_mean"] = round(sum(slopes) / len(slopes), 2)
-            else:
-                e.slope_deg = round(math.degrees(math.atan(rise /
-                                                           max(e.length_m, 1.0))), 2)
-                slopes.append(e.slope_deg)
+            e.grade_pct = round(100.0 * abs(elevs[-1] - elevs[0])
+                                / max(e.length_m, 1.0), 3)
             if rel:
                 e.relief_m = round(sum(rel) / len(rel), 1)
                 reliefs.append(e.relief_m)
-            # a cut face is likely where the road traverses steep ground with
-            # high local relief, or where OSM already says cutting=yes
-            if not e.cut_slope:
-                if e.slope_deg >= 12.0 and e.relief_m >= 25.0:
-                    e.cut_slope = 1
-                    cut += 1
         else:
             info["dem_misses"] += 1
-            if not e.slope_deg:
-                e.slope_deg = round(math.degrees(math.atan(
-                    abs(e.elev_to - e.elev_from) / max(e.length_m, 1.0))), 2)
-                slopes.append(e.slope_deg)
+        # effective slope: 85th percentile of the sampled terrain gradient,
+        # which captures the steepest bit a convoy must actually cross.  A
+        # --slope-tif product supplies this on its own - no DEM required - so
+        # the three cases are kept separate rather than nested under `elevs`.
+        if sl:
+            sl_sorted = sorted(sl)
+            e.slope_deg = round(sl_sorted[min(int(0.85 * len(sl_sorted)),
+                                              len(sl_sorted) - 1)], 2)
+            slopes.append(e.slope_deg)
+            if slope_raster is not None:
+                info["slope_raster_segments"] += 1
+        elif elevs:
+            rise = abs(elevs[-1] - elevs[0])
+            e.slope_deg = round(math.degrees(math.atan(
+                rise / max(e.length_m, 1.0))), 2)
+            slopes.append(e.slope_deg)
+        elif not e.slope_deg:
+            e.slope_deg = round(math.degrees(math.atan(
+                abs(e.elev_to - e.elev_from) / max(e.length_m, 1.0))), 2)
+            slopes.append(e.slope_deg)
+        # a cut face is likely where the road traverses steep ground with
+        # high local relief, or where OSM already says cutting=yes.  Relief
+        # needs a DEM, so this stays gated on one.
+        if elevs and not e.cut_slope:
+            if e.slope_deg >= 12.0 and e.relief_m >= 25.0:
+                e.cut_slope = 1
+                cut += 1
         if ndvi is not None:
             n = ndvi.elevation(lat, lon)
             if n is not None:
@@ -1495,8 +2061,20 @@ def enrich_graph_with_dem(graph: hpe.RoadGraph, dem: Optional[DemMosaic],
     info["cut_slope_pct"] = round(100.0 * sum(e.cut_slope for e in graph.edges)
                                   / max(len(graph.edges), 1), 1)
     _log(f"  terrain enrichment    : {info['dem_hits']}/{len(graph.edges)} segments "
-         f"sampled, mean slope {info['slope_deg_mean']} deg "
-         f"(p90 {info['slope_deg_p90']}), cuts {info['cut_slope_pct']}%", quiet)
+         f"hit the DEM, mean slope {info['slope_deg_mean']} deg "
+         f"(p90 {info['slope_deg_p90']}), cuts {info['cut_slope_pct']}%"
+         + (f"; slope from --slope-tif on {info['slope_raster_segments']}/"
+            f"{len(graph.edges)} segments" if slope_raster is not None else ""),
+         quiet)
+    if slope_raster is not None and not info["slope_raster_hits"]:
+        _warn("  ! the --slope-tif raster covered NONE of the segments, so "
+              "slope fell back to the DEM or to segment endpoints. Check that "
+              "it is in EPSG:4326 and overlaps the road network - a UTM slope "
+              "product will silently miss every point.", quiet)
+    if slope_raster is not None and dem is None:
+        _warn("  ! --slope-tif without --dem: elevation_m, relief_m, grade_pct "
+              "and cut_slope stay IMPUTED. Add --dem for the full terrain set.",
+              quiet)
     return info
 
 
@@ -1828,7 +2406,8 @@ def provenance_report(dem_info: Optional[Dict[str, Any]],
                       road_info: Dict[str, Any],
                       join_info: Dict[str, Any],
                       fuse_info: Dict[str, Any],
-                      city_info: Optional[Dict[str, Any]] = None
+                      city_info: Optional[Dict[str, Any]] = None,
+                      fetch_info: Optional[Dict[str, Any]] = None
                       ) -> Dict[str, Any]:
     """Column-by-column: where each model feature actually came from."""
     rain_ok = bool(rain_idx and rain_idx.by_date)
@@ -1848,8 +2427,13 @@ def provenance_report(dem_info: Optional[Dict[str, Any]],
                              else ("bucket model driven by rainfall, parameterised by "
                                    "SoilGrids wv0033/wv1500" if soil_ok and rain_ok
                                    else "IMPUTED bucket model with texture defaults")),
-        "slope_deg":        ("DEM (Horn 3x3, p85 along segment)" if dem_ok
-                             else "IMPUTED from segment endpoints", dem_ok),
+        "slope_deg":        (("pre-computed slope raster (--slope-tif), read as "
+                              + str(((dem_info or {}).get("slope_raster")
+                                     or {}).get("unit")))
+                             if (dem_info or {}).get("slope_raster_hits")
+                             else ("DEM (Horn 3x3, p85 along segment)" if dem_ok
+                                   else "IMPUTED from segment endpoints"),
+                             bool((dem_info or {}).get("slope_raster_hits")) or dem_ok),
         "elevation_m":      ("DEM bilinear sample" if dem_ok else "IMPUTED 0", dem_ok),
         "relief_m":         ("DEM peak-to-valley in 3px window" if dem_ok
                              else "IMPUTED 0", dem_ok),
@@ -1891,8 +2475,9 @@ def provenance_report(dem_info: Optional[Dict[str, Any]],
             "fusion": fuse_info,
             "city_anchors": {k: v for k, v in (city_info or {}).items()
                              if k != "attachment"},
+            "road_fetch": fetch_info,
         },
-        "optional_packages": HAS,
+        "optional_packages": dict(HAS),
     }
 
 
@@ -2215,10 +2800,53 @@ def build_parser() -> argparse.ArgumentParser:
       --rainfall data/raw/imd_district_daily.csv --soil online
   python data_ingestion.py --demo --train          # fuse then train the engine
   python data_ingestion.py --inspect data/raw/gsi_inventory.csv
+
+  # fetch the roads live instead of supplying a file
+  python data_ingestion.py --state Mizoram --landslides data/raw/gsi_inventory.csv
+  python data_ingestion.py --state Assam --bbox 24.0,89.5,28.0,96.0 \
+      --gsi-csv data/gsi_landslides.csv --max-edges 4000 --train
 """)
-    ap.add_argument("--roads", help="OSM/GeoJSON road network")
-    ap.add_argument("--landslides", help="GSI/NGDR landslide inventory CSV or GeoJSON")
+    ap.add_argument("--roads", help="OSM/GeoJSON road network on disk; omit it "
+                                    "and pass --state/--bbox to fetch one")
+    ap.add_argument("--state", default=None,
+                    help="NER state to fetch roads for when --roads is absent "
+                         "(Assam, Meghalaya, Arunachal[ Pradesh], Nagaland, "
+                         "Manipur, Mizoram, Tripura, Sikkim; short codes and "
+                         "case variants accepted)")
+    ap.add_argument("--bbox", default=None, metavar="BBOX",
+                    help="fetch window, as S,W,N,E or W,S,E,N - both are "
+                         "accepted and told apart by magnitude, so the two "
+                         "conventions in circulation cannot be confused "
+                         "silently. Overrides the --state box")
+    ap.add_argument("--network-type", default="drive",
+                    choices=("drive", "all"),
+                    help="which OSM highways to fetch (default drive; 'all' "
+                         "adds track/service/footway, useful where a landslide "
+                         "inventory references rural tracks)")
+    ap.add_argument("--max-edges", type=int, default=4000,
+                    help="cap on fetched ways. The window is SHRUNK around the "
+                         "inventory centroid to fit, never sampled row-wise - "
+                         "random sampling would leave isolated two-node islands "
+                         "and every corridor would report NO PATH. 0 = "
+                         "unlimited (default 4000)")
+    ap.add_argument("--road-cache", default=None,
+                    help="where to cache a fetched network "
+                         "(default <cache-dir>/osm_<state>.geojson); a cached "
+                         "network is reused, so only the first run needs network")
+    ap.add_argument("--overpass-timeout", type=int, default=180,
+                    help="seconds to allow an Overpass query (default 180)")
+    ap.add_argument("--offline", action="store_true",
+                    help="never touch the network: use caches, or fail with an "
+                         "explanation instead of dialling out")
+    ap.add_argument("--landslides", "--gsi-csv", dest="landslides",
+                    help="GSI/NGDR landslide inventory CSV or GeoJSON")
     ap.add_argument("--dem", help="DEM file or directory (.hgt/.hgt.gz/.asc/.tif)")
+    ap.add_argument("--slope-tif", default=None,
+                    help="pre-computed slope raster (GDAL/QGIS/ASTER "
+                         "derivative). Degrees or percent - the unit is "
+                         "detected and reported, since nothing above 90 can be "
+                         "degrees. Takes precedence over slope derived from "
+                         "--dem")
     ap.add_argument("--ndvi", help="optional NDVI raster (.asc/.tif)")
     ap.add_argument("--rainfall", help="IMD/NESAC/NEDFI rainfall CSV")
     ap.add_argument("--moisture", help="ERA5-Land/SMAP soil moisture CSV")
@@ -2269,6 +2897,12 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--inspect", metavar="PATH",
                     help="print the detected column mapping for a CSV and exit")
     ap.add_argument("--quiet", action="store_true")
+    ap.add_argument("--log-level", default=None,
+                    choices=("DEBUG", "INFO", "WARNING", "ERROR"),
+                    help="route progress through the logging module with "
+                         "timestamps instead of plain stdout")
+    ap.add_argument("--log-file", default=None,
+                    help="also write the log here (implies --log-level INFO)")
     ap.add_argument("--version", action="store_true")
     return ap
 
@@ -2455,12 +3089,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     if args.version:
         print(f"SIH26002 data ingestion v{__version__} "
-              f"(numpy={HAS['numpy']}, rasterio={HAS['rasterio']})")
+              f"(numpy={HAS['numpy']}, rasterio={HAS['rasterio']}, "
+              f"osmnx={HAS['osmnx']})")
         return 0
     if args.inspect:
         return inspect_source(args.inspect, quiet=args.quiet)
 
     quiet = args.quiet
+    if args.log_level or args.log_file:
+        configure_logging(args.log_level or "INFO", args.log_file)
     t0 = time.perf_counter()
     print("=" * 78)
     print(" SIH26002 DATA INGESTION & FUSION - North Eastern Region")
@@ -2480,8 +3117,34 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         moist_p = moist_p or p["moisture"]
         soil_cache_p = soil_cache_p or p.get("soilgrids_cache")
 
-    missing = [n for n, v in (("--roads", roads_p), ("--landslides", land_p))
-               if not v]
+    # --state / --bbox decide where to fetch roads when no file was given
+    fetch_info: Optional[Dict[str, Any]] = None
+    state_canon = resolve_state(args.state)
+    if args.state and state_canon is None:
+        print(f"\nERROR: unknown --state {args.state!r}. Known states: "
+              + ", ".join(sorted(NER_STATE_BOXES))
+              + ". Short codes (ap, as, ml, nl, mn, mz, tr, sk) also work.")
+        return 2
+    bbox: Optional[Tuple[float, float, float, float]] = None
+    if args.bbox:
+        try:
+            bbox = parse_bbox(args.bbox)
+        except ValueError as exc:
+            print(f"\nERROR: --bbox {args.bbox!r}: {exc}")
+            return 2
+        if state_canon:
+            _log(f"  fetch window        : {state_canon} overridden by --bbox "
+                 f"(W,S,E,N)={tuple(round(v, 3) for v in bbox)}", quiet)
+    elif state_canon:
+        bbox = NER_STATE_BOXES[state_canon]
+        _log(f"  fetch window        : {state_canon} "
+             f"(W,S,E,N)={tuple(round(v, 3) for v in bbox)}", quiet)
+
+    missing = []
+    if not land_p:
+        missing.append("--landslides")
+    if not roads_p and not bbox:
+        missing.append("--roads (or --state/--bbox to fetch one live)")
     if missing:
         print(f"\nERROR: {' and '.join(missing)} are required (or use --demo).")
         print("See DATASETS.md for where to download each source and the exact "
@@ -2495,24 +3158,61 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                                              "ingestion_report.json")
 
     print("\n[1] loading sources")
+    # the inventory is read FIRST on purpose: a live road fetch crops its window
+    # around where the landslides actually are, rather than around the centre of
+    # a state box that may be 500 km across and mostly event-free
+    events, ev_info = load_events(land_p, quiet=quiet)
+    if not roads_p and bbox:
+        # the cache name must depend on the WINDOW, not only on the state: two
+        # different --bbox values would otherwise share one file silently
+        tag = _norm_key(state_canon) or ("bbox-" + hpe._stable_hash(
+            str(tuple(round(v, 3) for v in bbox)))[:10])
+        road_cache = args.road_cache or os.path.join(
+            args.cache_dir, f"osm_{tag}.geojson")
+        try:
+            roads_p, fetch_info = acquire_roads(
+                bbox, state=state_canon, network_type=args.network_type,
+                max_edges=args.max_edges, cache_path=road_cache,
+                offline=args.offline, quiet=quiet,
+                overpass_timeout=args.overpass_timeout,
+                centre=inventory_centroid(events))
+        except Exception as exc:                           # noqa: BLE001
+            print(f"\nERROR: could not obtain a road network: {exc}")
+            print("Pass --roads <network.geojson> instead - DATASETS.md section 4 "
+                  "has an Overpass query to paste into a browser and save - or "
+                  "run once with network access so the result gets cached.")
+            return 4
     graph, road_info = roads_from_geojson(roads_p, min_length_m=args.min_length,
                                           max_length_m=args.max_length, quiet=quiet)
-    events, ev_info = load_events(land_p, quiet=quiet)
+    if fetch_info is not None:
+        road_info["fetch"] = fetch_info
+    largest = hpe._largest_component(graph)
+    if graph.nodes and largest < 0.9 * len(graph.nodes):
+        _warn(f"  ! connectivity        : largest component holds {largest}/"
+              f"{len(graph.nodes)} nodes - this network is FRAGMENTED, so any "
+              f"corridor crossing the gap reports NO PATH. Diagnose with "
+              f"--inspect {os.path.basename(str(roads_p))}.", quiet)
     rain = load_rainfall(rain_p, quiet=quiet) if rain_p else None
     moisture, moist_info = load_moisture(moist_p, quiet=quiet)
 
     dem = None
     dem_info = None
     ndvi = None
+    slope_raster = None
     if dem_p:
         dem = load_dem(dem_p, quiet=quiet)
         print(f"    DEM mosaic          : {dem.summary()['tiles']} tiles, "
               f"bbox {[round(v, 2) for v in dem.bbox()]}")
     if args.ndvi:
         ndvi = load_dem(args.ndvi, quiet=quiet)
+    if args.slope_tif:
+        slope_raster = load_dem(args.slope_tif, quiet=quiet)
+        print(f"    slope raster        : {slope_raster.summary()['tiles']} tiles, "
+              f"bbox {[round(v, 2) for v in slope_raster.bbox()]}")
 
     print("\n[2] enriching segments")
-    dem_info = enrich_graph_with_dem(graph, dem, ndvi, quiet=quiet)
+    dem_info = enrich_graph_with_dem(graph, dem, ndvi,
+                                     slope_raster=slope_raster, quiet=quiet)
     city_info = ({"cities_attached": 0, "note": "disabled by --no-city-names"}
                  if args.no_city_names
                  else attach_city_names(graph, radius_km=args.city_radius,
@@ -2520,7 +3220,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     soil = None
     cache_fp = (args.soil_cache or soil_cache_p
                 or os.path.join(args.cache_dir, "soilgrids.json"))
-    if args.soil == "online":
+    if args.soil == "online" and args.offline:
+        _warn("    --offline           : ignoring --soil online; SoilGrids would "
+              "have to dial out", quiet)
+    if args.soil == "online" and not args.offline:
         os.makedirs(os.path.dirname(cache_fp) or ".", exist_ok=True)
         soil = SoilGridsClient(cache_path=cache_fp, quiet=quiet,
                                nearest_km=args.soil_nearest_km)
@@ -2574,7 +3277,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     hpe.write_hazard_csv(rows, out_csv)
     hpe.save_json(graph.to_geojson(), graph_out)
     prov = provenance_report(dem_info, soil_info, rain, moist_info, ev_info,
-                             road_info, join_info, fuse_info, city_info)
+                             road_info, join_info, fuse_info, city_info,
+                             fetch_info=fetch_info)
     hpe.save_json(prov, report_out)
 
     print("\n[5] result")
