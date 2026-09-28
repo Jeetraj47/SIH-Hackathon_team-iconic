@@ -1,0 +1,182 @@
+Found 60 lines with non-cp1252 characters:
+
+  Line 3: U+2554 = '╔'
+    ╔══════════════════════════════════════════════════════════════════════════════╗
+
+  Line 4: U+2551 = '║'
+    ║  SIH26002 — Hazard Prediction Engine                                       ║
+
+  Line 5: U+2551 = '║'
+    ║  Predictive Route Optimization for Disaster-Prone Terrain                   ║
+
+  Line 6: U+2551 = '║'
+    ║                                                                            ║
+
+  Line 7: U+2551 = '║'
+    ║  Single-file, self-contained module.                                       ║
+
+  Line 8: U+2551 = '║'
+    ║  Run:  python hazard_prediction_engine.py                                  ║
+
+  Line 9: U+2551 = '║'
+    ║  Deps: numpy, pandas, xgboost, scikit-learn, geojson                       ║
+
+  Line 10: U+255A = '╚'
+    ╚══════════════════════════════════════════════════════════════════════════════╝
+
+  Line 19: U+03B1 = 'α'
+        C(e) = t(e) · [1 + α · P_disruption(e)] + β · H(e) + γ · S(e)
+
+  Line 25: U+03B1 = 'α'
+        α     = risk amplification      (default 2.5)
+
+  Line 26: U+03B2 = 'β'
+        β     = terrain penalty          (default 0.8)
+
+  Line 27: U+03B3 = 'γ'
+        γ     = cargo penalty            (default 1.2)
+
+  Line 69: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 71: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 106: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 108: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 225: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 227: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 244: U+2208 = '∈'
+        Trained on historical hazard logs to produce P_disruption ∈ [0, 1].
+
+  Line 260: U+1F9E0 = '🧠'
+            print("\n  🧠  Training XGBoost disruption classifier …")
+
+  Line 267: U+26A0 = '⚠'
+                print(f"    ⚠  Missing values detected:\n{missing[missing > 0]}")
+
+  Line 269: U+2139 = 'ℹ'
+                print(f"    ℹ  Dropped rows with NaN — {len(df)} rows remain.")
+
+  Line 360: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 362: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 401: U+03B1 = 'α'
+        C(e) = t(e) · [1 + α · P_disruption(e)] + β · H(e) + γ · S(e)
+
+  Line 413: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 415: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 429: U+2208 = '∈'
+            - p_disruption       : float ∈ [0, 1]
+
+  Line 496: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 498: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 510: U+1F4CA = '📊'
+        print(f"  📊  Scenario: {scenario.upper()}")
+
+  Line 523: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 525: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 547: U+03B1 = 'α'
+        p.add_argument("--alpha", type=float, default=2.5, help="Risk amplification α (default: 2.5)")
+
+  Line 548: U+03B2 = 'β'
+        p.add_argument("--beta", type=float, default=0.8, help="Terrain penalty β (default: 0.8)")
+
+  Line 549: U+03B3 = 'γ'
+        p.add_argument("--gamma", type=float, default=1.2, help="Cargo penalty γ (default: 1.2)")
+
+  Line 580: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 582: U+2550 = '═'
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+  Line 598: U+2500 = '─'
+        # ── Step 1: Load or generate data ────────────────────────────────────
+
+  Line 607: U+2500 = '─'
+        # ── Graph source selection: --pbf > --graph > mock ────────────────
+
+  Line 611: U+274C = '❌'
+                print("  ❌  pyrosm / geopandas not installed. Run:")
+
+  Line 617: U+274C = '❌'
+                print(f"  ❌  PBF file not found: {pbf_path}")
+
+  Line 628: U+274C = '❌'
+                print(f"  ❌  Graph file not found: {graph_path}")
+
+  Line 645: U+2500 = '─'
+        # ── Step 2: Train model ──────────────────────────────────────────────
+
+  Line 650: U+2500 = '─'
+        # ── Step 3: Re-weight graph under weather scenarios ──────────────────
+
+  Line 680: U+2500 = '─'
+        # ── Step 4: Summary ──────────────────────────────────────────────────
+
+  Line 698: U+2705 = '✅'
+            print(f"  ✅  Loaded historical data ← {HISTORICAL_CSV}  ({len(df)} records)")
+
+  Line 702: U+2500 = '─'
+        # ── Graph source (second pass uses same source as first) ──────────
+
+  Line 710: U+2705 = '✅'
+            print(f"  ✅  Loaded graph ← {graph_path}  ({len(graph['features'])} edges)")
+
+  Line 714: U+2705 = '✅'
+            print(f"  ✅  Loaded cached OSM graph ← {PBF_GRAPH}  ({len(graph['features'])} edges)")
+
+  Line 718: U+2705 = '✅'
+            print(f"  ✅  Loaded mock OSM graph ← {MOCK_GRAPH}  ({len(graph['features'])} edges)")
+
+  Line 722: U+2500 = '─'
+        # ── Step 2: Train model ──────────────────────────────────────────────
+
+  Line 723: U+25B8 = '▸'
+        print("\n  ▸ Step 2/4 — Training disruption model …")
+
+  Line 727: U+2500 = '─'
+        # ── Step 3: Re-weight graph under weather scenarios ──────────────────
+
+  Line 728: U+25B8 = '▸'
+        print("\n  ▸ Step 3/4 — Re-weighting graph edges …")
+
+  Line 757: U+2500 = '─'
+        # ── Step 4: Summary ──────────────────────────────────────────────────
+
+  Line 760: U+25B8 = '▸'
+        print(f"\n  ▸ Step 4/4 — Complete!")
+
+  Line 762: U+23F1 = '⏱'
+        print(f"  ⏱  Total time: {elapsed:.2f}s")
+
+  Line 763: U+1F39B = '🎛'
+        print(f"  🎛  Parameters: α={cost_params.alpha}  β={cost_params.beta}  "
+
+  Line 764: U+03B3 = 'γ'
+              f"γ={cost_params.gamma}  cargo={cost_params.cargo_type}")
+
