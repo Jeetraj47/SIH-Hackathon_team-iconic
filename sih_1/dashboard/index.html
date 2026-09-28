@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIH 2026 — Highway Safety Dashboard</title>
+  <meta name="description" content="Real-time highway infrastructure safety monitoring dashboard for SIH 2026" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Existing fonts and styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- ADD THESE 4 LINES HERE -->
+  <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.js"></script>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.css" type="text/css">
+<!-- Mapbox GL JS -->
+<link
+  href="https://api.mapbox.com/mapbox-gl-js/v3.16.0/mapbox-gl.css"
+  rel="stylesheet"
+/>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.16.0/mapbox-gl.js"></script>
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+  <div class="bg-glow bg-glow-3"></div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loader-container">
+      <div class="loader-ring"></div>
+      <div class="loader-ring"></div>
+      <div class="loader-ring"></div>
+      <p class="loader-text">Initializing Highway Safety System...</p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app" class="app hidden">
+    <!-- Top Navigation -->
+    <header id="header" class="header">
+      <div class="header-left">
+        <div class="logo">
+          <div class="logo-icon">🛣️</div>
+          <div class="logo-text">
+            <span class="logo-title">Highway Safety</span>
+            <span class="logo-sub">SIH 2026 • sih26002</span>
+          </div>
+        </div>
+      </div>
+      <nav class="header-nav" id="main-nav">
+        <button class="nav-btn active" data-tab="overview" id="nav-overview">
+          <span class="nav-icon">📊</span> Overview
+        </button>
+        <button class="nav-btn" data-tab="location" id="nav-location">
+          <span class="nav-icon">📍</span> Fleet Tracking
+        </button>
+        <button class="nav-btn" data-tab="mesh" id="nav-mesh">
+          <span class="nav-icon">🔗</span> Mesh Network
+        </button>
+        <button class="nav-btn" data-tab="incidents" id="nav-incidents">
+          <span class="nav-icon">🚨</span> Incidents
+        </button>
+      </nav>
+      <div class="header-right">
+        <div class="live-indicator" id="live-indicator">
+          <span class="live-dot"></span>
+          <span>LIVE</span>
+        </div>
+        <div class="user-badge" id="user-badge">
+          <span class="user-avatar">👤</span>
+          <span class="user-name" id="user-name">Admin</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tab Content -->
+    <main class="main-content">
+      <!-- ─── OVERVIEW TAB ──────────────────────────────── -->
+      <section id="tab-overview" class="tab-content active">
+        <div class="section-header">
+          <h1 class="section-title">System Overview</h1>
+          <p class="section-desc">Real-time monitoring of highway infrastructure</p>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card kpi-blue" id="kpi-users">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-info">
+              <div class="kpi-value" id="kpi-users-val">—</div>
+              <div class="kpi-label">Online Users</div>
+            </div>
+            <div class="kpi-sparkline" id="sparkline-users"></div>
+          </div>
+          <div class="kpi-card kpi-green" id="kpi-mesh">
+            <div class="kpi-icon">🔗</div>
+            <div class="kpi-info">
+              <div class="kpi-value" id="kpi-mesh-val">—</div>
+              <div class="kpi-label">Active Nodes</div>
+            </div>
+            <div class="kpi-sparkline" id="sparkline-mesh"></div>
+          </div>
+          <div class="kpi-card kpi-orange" id="kpi-incidents">
+            <div class="kpi-icon">🚨</div>
+            <div class="kpi-info">
+              <div class="kpi-value" id="kpi-incidents-val">—</div>
+              <div class="kpi-label">Active Incidents</div>
+            </div>
+            <div class="kpi-sparkline" id="sparkline-incidents"></div>
+          </div>
+          <div class="kpi-card kpi-red" id="kpi-critical">
+            <div class="kpi-icon">⚠️</div>
+            <div class="kpi-info">
+              <div class="kpi-value" id="kpi-critical-val">—</div>
+              <div class="kpi-label">Critical Alerts</div>
+            </div>
+            <div class="kpi-sparkline" id="sparkline-critical"></div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="chart-grid">
+          <div class="glass-card chart-card">
+            <h3 class="card-title">Incidents by Category</h3>
+            <canvas id="chart-category" width="400" height="250"></canvas>
+          </div>
+          <div class="glass-card chart-card">
+            <h3 class="card-title">Severity Distribution</h3>
+            <canvas id="chart-severity" width="400" height="250"></canvas>
+          </div>
+          <div class="glass-card chart-card">
+            <h3 class="card-title">Highway Load</h3>
+            <canvas id="chart-highway" width="400" height="250"></canvas>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="glass-card">
+          <h3 class="card-title">🔴 Recent Critical Incidents</h3>
+          <div id="recent-critical" class="activity-list"></div>
+        </div>
+      </section>
+
+      <!-- ─── LOCATION / FLEET TAB ──────────────────────── -->
+      <section id="tab-location" class="tab-content">
+        <div class="section-header">
+          <h1 class="section-title">Fleet Tracking</h1>
+          <p class="section-desc">Real-time GPS positions of all vehicles</p>
+        </div>
+
+       <div class="glass-card navigation-launch-card">
+
+  <div class="navigation-launch-content">
+
+    <div>
+      <h3 class="card-title">📍 Live Navigation & Hazards</h3>
+
+      <p class="section-desc">
+        Plan your route, select a destination and view highway hazards.
+      </p>
+    </div>
+
+    <button id="open-navigation-btn" class="navigation-launch-btn">
+      🗺️ Open Live Navigation
+    </button>
+
+  </div>
+
+</div>
+
+          <div class="fleet-sidebar">
+            <div class="glass-card">
+              <h3 class="card-title">Online Vehicles</h3>
+              <div id="fleet-list" class="fleet-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── MESH NETWORK TAB ──────────────────────────── -->
+      <section id="tab-mesh" class="tab-content">
+        <div class="section-header">
+          <h1 class="section-title">Mesh Network</h1>
+          <p class="section-desc">Infrastructure node health and connectivity</p>
+        </div>
+
+        <!-- Mesh KPIs -->
+        <div class="mesh-kpi-row" id="mesh-kpi-row">
+          <div class="mesh-kpi glass-card">
+            <div class="mesh-kpi-val" id="mesh-total">—</div>
+            <div class="mesh-kpi-label">Total Nodes</div>
+          </div>
+          <div class="mesh-kpi glass-card">
+            <div class="mesh-kpi-val active-val" id="mesh-active">—</div>
+            <div class="mesh-kpi-label">Active</div>
+          </div>
+          <div class="mesh-kpi glass-card">
+            <div class="mesh-kpi-val inactive-val" id="mesh-inactive">—</div>
+            <div class="mesh-kpi-label">Inactive</div>
+          </div>
+          <div class="mesh-kpi glass-card">
+            <div class="mesh-kpi-val maintenance-val" id="mesh-maintenance">—</div>
+            <div class="mesh-kpi-label">Maintenance</div>
+          </div>
+          <div class="mesh-kpi glass-card">
+            <div class="mesh-kpi-val" id="mesh-battery">—%</div>
+            <div class="mesh-kpi-label">Avg Battery</div>
+          </div>
+          <div class="mesh-kpi glass-card">
+            <div class="mesh-kpi-val" id="mesh-signal">—</div>
+            <div class="mesh-kpi-label">Avg Signal</div>
+          </div>
+        </div>
+
+        <!-- Mesh Node Grid -->
+        <div class="glass-card">
+          <div class="mesh-toolbar">
+            <h3 class="card-title">Node Registry</h3>
+            <div class="mesh-filters">
+              <select id="mesh-filter-type" class="filter-select">
+                <option value="">All Types</option>
+                <option value="gateway">Gateway</option>
+                <option value="sensor">Sensor</option>
+                <option value="relay">Relay</option>
+              </select>
+              <select id="mesh-filter-status" class="filter-select">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+            </div>
+          </div>
+          <div id="mesh-nodes-grid" class="nodes-grid"></div>
+        </div>
+
+        <!-- Mesh Topology -->
+        <div class="glass-card chart-card">
+          <h3 class="card-title">Nodes by Highway</h3>
+          <canvas id="chart-mesh-highway" width="800" height="300"></canvas>
+        </div>
+      </section>
+
+      <!-- ─── INCIDENTS TAB ─────────────────────────────── -->
+      <section id="tab-incidents" class="tab-content">
+        <div class="section-header">
+          <h1 class="section-title">Incident Management</h1>
+          <p class="section-desc">Track, verify, and resolve highway incidents</p>
+        </div>
+
+        <!-- Incident Stats Strip -->
+        <div class="incident-stats-strip" id="incident-stats-strip">
+          <div class="stat-chip reported">
+            <span class="chip-val" id="stat-reported">0</span>
+            <span class="chip-label">Reported</span>
+          </div>
+          <div class="stat-chip verified">
+            <span class="chip-val" id="stat-verified">0</span>
+            <span class="chip-label">Verified</span>
+          </div>
+          <div class="stat-chip in-progress">
+            <span class="chip-val" id="stat-inprogress">0</span>
+            <span class="chip-label">In Progress</span>
+          </div>
+          <div class="stat-chip resolved">
+            <span class="chip-val" id="stat-resolved">0</span>
+            <span class="chip-label">Resolved</span>
+          </div>
+          <div class="stat-chip dismissed">
+            <span class="chip-val" id="stat-dismissed">0</span>
+            <span class="chip-label">Dismissed</span>
+          </div>
+        </div>
+
+        <!-- Incident Filters -->
+        <div class="glass-card">
+          <div class="incident-toolbar">
+            <h3 class="card-title">Active Incidents</h3>
+            <div class="incident-filters">
+              <select id="inc-filter-category" class="filter-select">
+                <option value="">All Categories</option>
+                <option value="accident">Accident</option>
+                <option value="pothole">Pothole</option>
+                <option value="landslide">Landslide</option>
+                <option value="flood">Flood</option>
+                <option value="debris">Debris</option>
+                <option value="construction">Construction</option>
+                <option value="signal_failure">Signal Failure</option>
+                <option value="other">Other</option>
+              </select>
+              <select id="inc-filter-severity" class="filter-select">
+                <option value="">All Severity</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+          <div id="incidents-list" class="incidents-list"></div>
+        </div>
+
+        <!-- Incident Map -->
+        <div class="glass-card">
+          <h3 class="card-title">📍 Incident Locations</h3>
+          <div class="map-container">
+            <canvas id="canvas-incidents" width="800" height="400"></canvas>
+          </div>
+          <div class="map-legend">
+            <span class="legend-item"><span class="legend-dot dot-critical"></span> Critical</span>
+            <span class="legend-item"><span class="legend-dot dot-high"></span> High</span>
+            <span class="legend-item"><span class="legend-dot dot-medium"></span> Medium</span>
+            <span class="legend-item"><span class="legend-dot dot-low"></span> Low</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast notifications -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+<!-- Live Navigation Modal -->
+<div id="navigation-modal" class="navigation-modal hidden">
+
+  <div class="navigation-modal-content">
+
+    <!-- Header -->
+    <div class="navigation-modal-header">
+      <div>
+        <h2>📍 Live Navigation & Hazards</h2>
+        <p>Search places and choose your route.</p>
+      </div>
+
+      <button
+        id="close-navigation-btn"
+        class="navigation-close-btn"
+        type="button"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Route Search -->
+    <div class="navigation-search-panel">
+
+      <div class="navigation-input-group">
+        <label for="navigation-from">
+          📍 Starting Point
+        </label>
+
+        <input
+          type="text"
+          id="navigation-from"
+          placeholder="Search starting place..."
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="navigation-input-group">
+        <label for="navigation-to">
+          🏁 Destination
+        </label>
+
+        <input
+          type="text"
+          id="navigation-to"
+          placeholder="Search destination..."
+          autocomplete="off"
+        />
+      </div>
+
+      <button
+        id="find-route-btn"
+        class="navigation-route-btn"
+        type="button"
+      >
+        🗺️ Find Routes
+      </button>
+
+    </div>
+
+    <!-- Route choices will appear here later -->
+    <div id="route-options" class="route-options hidden"></div>
+
+    <!-- Map -->
+    <div id="navigation-map"></div>
+
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
